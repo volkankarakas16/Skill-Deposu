@@ -1,0 +1,17 @@
+# Kurulacak Claude Code plugin/skill listesi
+# Format: plugin-adi@marketplace-adi  (bir satirda bir tane)
+# Yeni skill eklemek icin: bu dosyaya yeni bir satir ekle, commit + push yap.
+# Kurmak icin: install-claude-skills.ps1 dosyasini calistir (git pull sonrasi).
+
+engineering-skills@claude-code-skills
+engineering-advanced-skills@claude-code-skills
+product-skills@claude-code-skills
+marketing-skills@claude-code-skills
+ra-qm-skills@claude-code-skills
+pm-skills@claude-code-skills
+c-level-skills@claude-code-skills
+business-growth-skills@claude-code-skills
+finance-skills@claude-code-skills
+self-improving-agent@claude-code-skills
+security-guidance@claude-code-skills
+video-content-strategist@claude-code-skills
