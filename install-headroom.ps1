@@ -1,6 +1,9 @@
 # Headroom (token-tasarrufu proxy) tam kurulumu.
-# install-claude-skills.ps1, headroom Claude Code plugin'ini (sadece hook'lari) kurar.
-# Bu script ise asil calisan parcayi kurar: headroom CLI + kalici (durable) proxy routing.
+# headroom@headroom-marketplace plugin'ini AYRICA kurma - o plugin'in kendi
+# PreToolUse hook'u bu scriptin settings.json'a yazdigi hook ile cakisip
+# her Bash/PowerShell komutunda gorunur bir cmd penceresi acilmasina sebep
+# oluyor. Bu script tek basina yeterli: headroom CLI + kalici (durable)
+# proxy routing kurar.
 #
 # Kullanim: powershell -ExecutionPolicy Bypass -File install-headroom.ps1
 #

@@ -15,7 +15,9 @@ Yeni bir skill eklemek için `claude-skills.txt` dosyasına `plugin-adi@marketpl
 
 ## Headroom (token tasarrufu proxy) kurulumu
 
-Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç. `install-claude-skills.ps1` sadece Claude Code plugin'ini (başlatma hook'larını) kurar — asıl çalışan proxy'yi ve routing'i kurmak için ayrıca:
+Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç.
+
+**ÖNEMLİ:** `headroom@headroom-marketplace` plugin'ini `claude-skills.txt`'ye EKLEME. O plugin'in kendi `PreToolUse` hook'u, aşağıdaki script'in `settings.json`'a yazdığı hook ile aynı işi tekrarlayıp her Bash/PowerShell komutunda görünür bir cmd penceresi açılmasına sebep oluyor (bunu bir kurulumda yaşadık). Headroom'u sadece şu script ile kur:
 
 ```
 powershell -ExecutionPolicy Bypass -File install-headroom.ps1

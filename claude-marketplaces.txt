@@ -1,6 +1,10 @@
 # Kurulacak Claude Code plugin marketplace'leri
 # Format: owner/repo (bir satirda bir tane)
 # Yeni marketplace eklemek icin: bu dosyaya yeni bir satir ekle, commit + push yap.
+#
+# NOT: headroomlabs-ai/headroom BURAYA EKLENMEMELI. headroom plugin'i
+# install-headroom.ps1'in yazdigi hook'u tekrarlayip cift tetiklenmeye
+# (her komutta gorunur cmd penceresi) sebep oluyordu. headroom kurulumu
+# icin install-headroom.ps1 kullan (bkz README.md).
 
 alirezarezvani/claude-skills
-headroomlabs-ai/headroom

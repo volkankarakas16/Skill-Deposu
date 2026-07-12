@@ -2,6 +2,12 @@
 # Format: plugin-adi@marketplace-adi  (bir satirda bir tane)
 # Yeni skill eklemek icin: bu dosyaya yeni bir satir ekle, commit + push yap.
 # Kurmak icin: install-claude-skills.ps1 dosyasini calistir (git pull sonrasi).
+#
+# NOT: headroom BURAYA EKLENMEMELI. headroom@headroom-marketplace plugin'i,
+# install-headroom.ps1'in settings.json'a yazdigi hook ile ayni isi
+# tekrarlayip her Bash/PowerShell komutunda gorunur bir cmd penceresi
+# acilmasina sebep oluyordu. headroom kurulumu icin install-headroom.ps1
+# kullan (bkz README.md).
 
 engineering-skills@claude-code-skills
 engineering-advanced-skills@claude-code-skills
@@ -15,4 +21,3 @@ finance-skills@claude-code-skills
 self-improving-agent@claude-code-skills
 security-guidance@claude-code-skills
 video-content-strategist@claude-code-skills
-headroom@headroom-marketplace
