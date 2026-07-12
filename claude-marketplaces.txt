@@ -1,0 +1,6 @@
+# Kurulacak Claude Code plugin marketplace'leri
+# Format: owner/repo (bir satirda bir tane)
+# Yeni marketplace eklemek icin: bu dosyaya yeni bir satir ekle, commit + push yap.
+
+alirezarezvani/claude-skills
+headroomlabs-ai/headroom

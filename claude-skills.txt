@@ -15,3 +15,4 @@ finance-skills@claude-code-skills
 self-improving-agent@claude-code-skills
 security-guidance@claude-code-skills
 video-content-strategist@claude-code-skills
+headroom@headroom-marketplace

@@ -11,4 +11,4 @@ git pull
 powershell -ExecutionPolicy Bypass -File install-claude-skills.ps1
 ```
 
-Yeni bir skill eklemek için `claude-skills.txt` dosyasına `plugin-adi@marketplace-adi` formatında bir satır ekleyip commit + push yap. Diğer bilgisayarda yukarıdaki iki komutu çalıştırmak yeterli.
+Yeni bir skill eklemek için `claude-skills.txt` dosyasına `plugin-adi@marketplace-adi` formatında bir satır ekleyip commit + push yap. Eğer skill farklı bir marketplace'ten geliyorsa önce `claude-marketplaces.txt` dosyasına `owner/repo` formatında bir satır ekle. Diğer bilgisayarda yukarıdaki iki komutu çalıştırmak yeterli.
