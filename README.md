@@ -13,6 +13,17 @@ powershell -ExecutionPolicy Bypass -File install-claude-skills.ps1
 
 Yeni bir skill eklemek için `claude-skills.txt` dosyasına `plugin-adi@marketplace-adi` formatında bir satır ekleyip commit + push yap. Eğer skill farklı bir marketplace'ten geliyorsa önce `claude-marketplaces.txt` dosyasına `owner/repo` formatında bir satır ekle. Diğer bilgisayarda yukarıdaki iki komutu çalıştırmak yeterli.
 
+## Global CLAUDE.md (skill/agent kullanım kuralı, her klasörde geçerli)
+
+`global-CLAUDE.md`, hangi klasörde Claude Code açarsan aç geçerli olacak kuralları (ör. skill/agent önerme + onay alma) içerir. Yeni bir bilgisayarda veya güncel kuralları almak için:
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-global-claude-md.ps1
+```
+
+Bu script `global-CLAUDE.md`'yi `~/.claude/CLAUDE.md` konumuna kopyalar. Kuralı güncellemek için `global-CLAUDE.md`'yi düzenleyip commit + push yap, diğer bilgisayarda yukarıdaki iki komutu çalıştır.
+
 ## Headroom (token tasarrufu proxy) kurulumu
 
 Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç.
