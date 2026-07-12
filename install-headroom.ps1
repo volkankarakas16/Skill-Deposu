@@ -14,6 +14,9 @@
 #      calistirip bu scripti tekrar baslat.
 #   2) Self-healing Scheduled Task kaydi da admin istiyor. Script admin
 #      degilse bunu atlar ve calistirman gereken komutu ekrana yazar.
+#   3) Scheduled Task, headroom.exe'yi dogrudan degil wscript.exe uzerinden
+#      gizli bir .vbs baslatici ile cagirir; boylece 5 dakikada bir "port
+#      kullanimda" kontrolu ekranda gorunur bir cmd penceresi acmaz.
 #
 # Bu script tekrar tekrar calistirilabilir (idempotent) - zaten kurulu olan
 # adimlari atlar. Ozellikle "headroom init --global claude" komutu
@@ -24,6 +27,7 @@
 $ErrorActionPreference = "Stop"
 $SettingsPath = "$env:USERPROFILE\.claude\settings.json"
 $DurableMarker = "headroom-init-claude"
+$VbsWrapperPath = "$env:USERPROFILE\.local\bin\headroom-proxy-silent.vbs"
 $NoBomUtf8 = New-Object System.Text.UTF8Encoding $false
 
 function Write-JsonNoBom($obj) {
@@ -136,42 +140,72 @@ function Ensure-Routing {
     Write-Host "settings.json guncellendi: ANTHROPIC_BASE_URL=http://127.0.0.1:8787"
 }
 
+function Ensure-HiddenProxyLauncher {
+    # Scheduled Task headroom.exe'yi DOGRUDAN cagirirsa (proxy zaten calisiyor
+    # oldugu icin hemen "port kullanimda" hatasiyla kapansa bile) her 5
+    # dakikada bir gorunur bir cmd penceresi ekranda yanip sonuyor.
+    # New-ScheduledTaskSettingsSet -Hidden SADECE Task Scheduler listesinde
+    # task'i gizler, baslattigi process'in konsol penceresini gizlemez. Bu
+    # yuzden headroom.exe'yi wscript.exe uzerinden, WshShell.Run'in 0 (gizli
+    # pencere) parametresiyle baslatan bir .vbs kullaniyoruz.
+    $exe = "$env:USERPROFILE\.local\bin\headroom.exe"
+    $vbsContent = @'
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run """{0}"" proxy", 0, False
+'@ -f $exe
+    [System.IO.File]::WriteAllText($VbsWrapperPath, $vbsContent, $NoBomUtf8)
+}
+
+function Test-ScheduledTaskHidden {
+    $task = Get-ScheduledTask -TaskName "HeadroomProxy" -ErrorAction SilentlyContinue
+    if (-not $task) { return $false }
+    $action = $task.Actions | Select-Object -First 1
+    return ($action.Execute -like "*wscript*")
+}
+
 function Ensure-ScheduledTask {
     # Proxy sadece Claude Code SessionStart hook'una bagimli kalirsa, oturum
     # ortasinda olduğunde (uyku/uyanma, cokme) bir sonraki Claude Code
     # acilisina kadar ConnectionRefused riski var. Bu yuzden proxy'yi ayrica
     # 5 dakikada bir kontrol edip olmusse yeniden baslatan, terminalden
-    # bagimsiz bir Scheduled Task kaydediyoruz (self-healing).
-    if (Get-ScheduledTask -TaskName "HeadroomProxy" -ErrorAction SilentlyContinue) {
-        Write-Host "HeadroomProxy scheduled task zaten kurulu."
+    # bagimsiz bir Scheduled Task kaydediyoruz (self-healing). wscript.exe
+    # baslatici sayesinde bu kontroller ekranda pencere acmadan calisir.
+    Ensure-HiddenProxyLauncher
+
+    if (Test-ScheduledTaskHidden) {
+        Write-Host "HeadroomProxy scheduled task zaten kurulu (gizli baslatici ile)."
         return
     }
 
     $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $isAdmin) {
         Write-Host ""
-        Write-Warning "HeadroomProxy scheduled task admin yetkisi istiyor, atlandi."
-        Write-Host "Kalici/self-healing proxy icin Admin PowerShell'de sunu calistir:"
-        Write-Host @'
-$exe = "$env:USERPROFILE\.local\bin\headroom.exe"
-$action = New-ScheduledTaskAction -Execute $exe -Argument "proxy"
+        Write-Warning "HeadroomProxy scheduled task (gizli baslatici) admin yetkisi istiyor, atlandi."
+        Write-Host "Kalici/self-healing/gizli proxy icin Admin PowerShell'de sunu calistir:"
+        Write-Host (@'
+$action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument '"{0}"'
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
 $logonTrigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet -Hidden -MultipleInstances IgnoreNew -ExecutionTimeLimit 0 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+Unregister-ScheduledTask -TaskName "HeadroomProxy" -Confirm:$false -ErrorAction SilentlyContinue
 Register-ScheduledTask -TaskName "HeadroomProxy" -Action $action -Trigger @($logonTrigger, $trigger) -Settings $settings -RunLevel Limited -Force
 Start-ScheduledTask -TaskName "HeadroomProxy"
-'@
+'@ -f $VbsWrapperPath)
         return
     }
 
-    $exe = "$env:USERPROFILE\.local\bin\headroom.exe"
-    $action = New-ScheduledTaskAction -Execute $exe -Argument "proxy"
+    if (Get-ScheduledTask -TaskName "HeadroomProxy" -ErrorAction SilentlyContinue) {
+        Write-Host "Eski HeadroomProxy task'i (gorunur pencereli) kaldirilip gizli baslatici ile yeniden kuruluyor..."
+        Unregister-ScheduledTask -TaskName "HeadroomProxy" -Confirm:$false
+    }
+
+    $action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$VbsWrapperPath`""
     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
     $logonTrigger = New-ScheduledTaskTrigger -AtLogOn
     $taskSettings = New-ScheduledTaskSettingsSet -Hidden -MultipleInstances IgnoreNew -ExecutionTimeLimit 0 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
     Register-ScheduledTask -TaskName "HeadroomProxy" -Action $action -Trigger @($logonTrigger, $trigger) -Settings $taskSettings -RunLevel Limited -Force
     Start-ScheduledTask -TaskName "HeadroomProxy"
-    Write-Host "HeadroomProxy scheduled task kuruldu ve baslatildi."
+    Write-Host "HeadroomProxy scheduled task kuruldu ve baslatildi (gizli, pencere acilmiyor)."
 }
 
 Ensure-Uv
