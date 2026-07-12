@@ -21,3 +21,89 @@ finance-skills@claude-code-skills
 self-improving-agent@claude-code-skills
 security-guidance@claude-code-skills
 video-content-strategist@claude-code-skills
+
+# --- 2026-07-12: "eksik olan herseyi kur" talebiyle eklenen, marketplace'teki
+# geri kalan tum plugin'ler. c-level-skills ile birebir cakisan 8 tanesi
+# BILINCLI OLARAK ATLANDI (marketplace.json'da "also bundled in c-level-skills"
+# yaziyor): c-level-agents, general-counsel-advisor, arquiteto-de-empresa,
+# chief-data-officer-advisor, vpe-advisor, chief-customer-officer-advisor,
+# chief-ai-officer-advisor, executive-mentor.
+
+# development
+pw@claude-code-skills
+autoresearch-agent@claude-code-skills
+google-workspace-cli@claude-code-skills
+agenthub@claude-code-skills
+a11y-audit@claude-code-skills
+docker-development@claude-code-skills
+helm-chart-builder@claude-code-skills
+terraform-patterns@claude-code-skills
+code-tour@claude-code-skills
+demo-video@claude-code-skills
+data-quality-auditor@claude-code-skills
+statistical-analyst@claude-code-skills
+karpathy-coder@claude-code-skills
+feature-flags-architect@claude-code-skills
+kubernetes-operator@claude-code-skills
+chaos-engineering@claude-code-skills
+slo-architect@claude-code-skills
+write-a-skill@claude-code-skills
+workflow-builder@claude-code-skills
+caveman@claude-code-skills
+zero-hallucination-coder@claude-code-skills
+agent-harness@claude-code-skills
+grill-me@claude-code-skills
+handoff-engineering@claude-code-skills
+universal-scraping-architect@claude-code-skills
+snowflake-development@claude-code-skills
+behuman@claude-code-skills
+claude-coach@claude-code-skills
+grill-with-docs@claude-code-skills
+llm-cost-optimizer@claude-code-skills
+prompt-governance@claude-code-skills
+collab-proof@claude-code-skills
+
+# product
+code-to-prd@claude-code-skills
+agile-product-owner@claude-code-skills
+research-summarizer@claude-code-skills
+
+# marketing
+landing@claude-code-skills
+aeo@claude-code-skills
+youtube-full@claude-code-skills
+
+# compliance
+compliance-os@claude-code-skills
+compliance-team-eu-ai-act@claude-code-skills
+compliance-team-iso42001@claude-code-skills
+
+# finance
+business-investment-advisor@claude-code-skills
+
+# productivity
+capture-skill@claude-code-skills
+email-pair@claude-code-skills
+reflect-skill@claude-code-skills
+handoff-productivity@claude-code-skills
+andreessen@claude-code-skills
+roast@claude-code-skills
+
+# research
+pulse@claude-code-skills
+deep-research@claude-code-skills
+litreview@claude-code-skills
+grants@claude-code-skills
+dossier@claude-code-skills
+patent@claude-code-skills
+syllabus@claude-code-skills
+notebooklm@claude-code-skills
+research-orchestrator@claude-code-skills
+
+# design / knowledge / operations / commercial / research-ops / documentation
+apple-hig-expert@claude-code-skills
+llm-wiki@claude-code-skills
+business-operations-skills@claude-code-skills
+commercial-skills@claude-code-skills
+research-ops-skills@claude-code-skills
+markdown-html-skills@claude-code-skills
