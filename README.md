@@ -12,3 +12,21 @@ powershell -ExecutionPolicy Bypass -File install-claude-skills.ps1
 ```
 
 Yeni bir skill eklemek için `claude-skills.txt` dosyasına `plugin-adi@marketplace-adi` formatında bir satır ekleyip commit + push yap. Eğer skill farklı bir marketplace'ten geliyorsa önce `claude-marketplaces.txt` dosyasına `owner/repo` formatında bir satır ekle. Diğer bilgisayarda yukarıdaki iki komutu çalıştırmak yeterli.
+
+## Headroom (token tasarrufu proxy) kurulumu
+
+Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç. `install-claude-skills.ps1` sadece Claude Code plugin'ini (başlatma hook'larını) kurar — asıl çalışan proxy'yi ve routing'i kurmak için ayrıca:
+
+```
+powershell -ExecutionPolicy Bypass -File install-headroom.ps1
+```
+
+Bu script sırasıyla: `uv` kurar (yoksa), `headroom` CLI'ını izole bir ortamda kurar, kalıcı (durable) Claude Code entegrasyonunu kaydeder ve `~/.claude/settings.json` içine `ANTHROPIC_BASE_URL=http://127.0.0.1:8787` satırını ekler.
+
+**Kuruma başlamadan önce:** Bazı antivirüs yazılımları (Windows Defender dahil), headroom'un bağımlılığı olan `ast-grep-cli` paketinin `sg.exe` dosyasını yanlış pozitif olarak engelleyebiliyor. Kurulum bu hatayı verirse, **Yönetici olarak açılmış bir PowerShell**'de şunu çalıştırıp scripti tekrar başlat:
+
+```
+Add-MpPreference -ExclusionPath "$env:APPDATA\uv\tools\headroom-ai"
+```
+
+Kurulum bitince Claude Code'u yeniden başlat ve `headroom doctor` ile doğrula — `claude: routed`, `proxy: pass`, `0 failure(s)` görmen gerekiyor. Ayar kullanıcı genelinde (`~/.claude/settings.json`) olduğu için hangi repo'yu açarsan aç otomatik devrede olur, ekstra bir işlem gerekmez.
