@@ -140,6 +140,38 @@ function Ensure-Routing {
     Write-Host "settings.json guncellendi: ANTHROPIC_BASE_URL=http://127.0.0.1:8787"
 }
 
+function Ensure-OutputShaper {
+    # Output-shaper, headroom'un yanit uzunlugunu ogrenilen kullanici
+    # tercihine gore ayarlayip output-token tasarrufu saglayan opsiyonel
+    # katman. HEADROOM_OUTPUT_SHAPER proxy yeniden baslasa/farkli bilgisayarda
+    # kurulsa bile kalici acik kalsin diye settings.json env blogune
+    # yaziliyor (ANTHROPIC_BASE_URL ile ayni yontem).
+    if (-not (Test-Path $SettingsPath)) {
+        Write-Warning "$SettingsPath bulunamadi, output-shaper ayari atlaniyor."
+        return
+    }
+
+    $json = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+
+    if (-not $json.env) {
+        $json | Add-Member -MemberType NoteProperty -Name env -Value ([PSCustomObject]@{})
+    }
+
+    if ($json.env.PSObject.Properties.Name -contains "HEADROOM_OUTPUT_SHAPER" -and $json.env.HEADROOM_OUTPUT_SHAPER -eq "1") {
+        Write-Host "Output-shaper zaten kalici olarak ayarli."
+        return
+    }
+
+    if ($json.env.PSObject.Properties.Name -contains "HEADROOM_OUTPUT_SHAPER") {
+        $json.env.HEADROOM_OUTPUT_SHAPER = "1"
+    } else {
+        $json.env | Add-Member -MemberType NoteProperty -Name HEADROOM_OUTPUT_SHAPER -Value "1"
+    }
+
+    Write-JsonNoBom $json
+    Write-Host "settings.json guncellendi: HEADROOM_OUTPUT_SHAPER=1 (kalici)"
+}
+
 function Ensure-HiddenProxyLauncher {
     # Scheduled Task headroom.exe'yi DOGRUDAN cagirirsa (proxy zaten calisiyor
     # oldugu icin hemen "port kullanimda" hatasiyla kapansa bile) her 5
@@ -214,6 +246,7 @@ Ensure-DurableInit
 Remove-PreToolUseHook
 Remove-PhantomPlugin
 Ensure-Routing
+Ensure-OutputShaper
 Ensure-ScheduledTask
 
 Write-Host ""
