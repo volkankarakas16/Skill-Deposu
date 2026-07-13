@@ -107,3 +107,6 @@ business-operations-skills@claude-code-skills
 commercial-skills@claude-code-skills
 research-ops-skills@claude-code-skills
 markdown-html-skills@claude-code-skills
+
+# research (ayri marketplace: last30days-skill reposunun kendi marketplace.json'i)
+last30days@last30days-skill

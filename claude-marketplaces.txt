@@ -8,3 +8,4 @@
 # icin install-headroom.ps1 kullan (bkz README.md).
 
 alirezarezvani/claude-skills
+mvanhorn/last30days-skill
