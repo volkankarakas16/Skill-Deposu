@@ -87,15 +87,35 @@ function Remove-PreToolUseHook {
     # PreToolUse hook'u yazar. PreToolUse, Bash/PowerShell CALISTIRDIGIMIZ HER
     # SEFERDE gorunur bir cmd penceresi acilmasina sebep oluyor. SessionStart
     # tek basina yeterli (proxy'yi oturum basinda ayaga kaldirir), o yuzden
-    # PreToolUse'u kaldiriyoruz.
+    # headroom'un PreToolUse hook'unu kaldiriyoruz. Sadece komutunda "headroom"
+    # gecen girdileri hedef aliyoruz ki baska bir amacla (ornegin update-config
+    # skill'i ile) eklenmis PreToolUse hook'lari yanlislikla silinmesin.
     if (-not (Test-Path $SettingsPath)) { return }
 
     $json = Get-Content $SettingsPath -Raw | ConvertFrom-Json
-    if ($json.hooks -and $json.hooks.PSObject.Properties.Name -contains "PreToolUse") {
-        $json.hooks.PSObject.Properties.Remove("PreToolUse")
-        Write-JsonNoBom $json
-        Write-Host "settings.json: fazladan PreToolUse hook'u kaldirildi (cmd penceresi sorunu icin)."
+    if (-not ($json.hooks -and $json.hooks.PSObject.Properties.Name -contains "PreToolUse")) { return }
+
+    $removedAny = $false
+    $keptEntries = @()
+    foreach ($entry in @($json.hooks.PreToolUse)) {
+        $allHooks = @($entry.hooks)
+        $keptHooks = @($allHooks | Where-Object { $_.command -notlike "*headroom*" })
+        if ($keptHooks.Count -lt $allHooks.Count) { $removedAny = $true }
+        if ($keptHooks.Count -gt 0) {
+            $entry.hooks = $keptHooks
+            $keptEntries += $entry
+        }
     }
+
+    if (-not $removedAny) { return }
+
+    if ($keptEntries.Count -gt 0) {
+        $json.hooks.PreToolUse = @($keptEntries)
+    } else {
+        $json.hooks.PSObject.Properties.Remove("PreToolUse")
+    }
+    Write-JsonNoBom $json
+    Write-Host "settings.json: headroom'un PreToolUse hook'u kaldirildi (cmd penceresi sorunu icin)."
 }
 
 function Remove-PhantomPlugin {
