@@ -76,7 +76,7 @@ $failed = @()
 
 foreach ($repo in $repos) {
     try {
-        $headers = @{ "User-Agent" = "ClaudeProjeler-skill-update-check" }
+        $headers = @{ "User-Agent" = "Skill-Deposu-skill-update-check" }
         $commits = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits?per_page=1" -Headers $headers -TimeoutSec 10
         if (-not $commits -or $commits.Count -eq 0) { continue }
         $latest = $commits[0]

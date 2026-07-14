@@ -1,4 +1,4 @@
-# ClaudeProjeler
+# Skill Deposu
 
 Ev ve ofis bilgisayarları arasında proje dosyalarını ve Claude Code skill listesini senkronize etmek için kullanılır.
 
