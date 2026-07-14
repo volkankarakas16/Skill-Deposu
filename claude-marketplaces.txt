@@ -9,3 +9,4 @@
 
 alirezarezvani/claude-skills
 mvanhorn/last30days-skill
+coreyhaines31/marketingskills

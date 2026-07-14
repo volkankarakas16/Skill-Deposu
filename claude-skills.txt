@@ -110,3 +110,8 @@ markdown-html-skills@claude-code-skills
 
 # research (ayri marketplace: last30days-skill reposunun kendi marketplace.json'i)
 last30days@last30days-skill
+
+# marketing (ayri marketplace: coreyhaines31/marketingskills, 47 pazarlama skill'i.
+# DIKKAT: isim yukaridaki marketing-skills@claude-code-skills ile AYNI ama farkli
+# marketplace'ten geliyor - @marketingskills son eki ile ayirt edilir, karistirma.)
+marketing-skills@marketingskills
