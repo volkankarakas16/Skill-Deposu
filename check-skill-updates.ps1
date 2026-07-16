@@ -100,6 +100,28 @@ Save-State $state
 
 if ($updated.Count -gt 0) {
     $text = "Skill guncelleme kontrolu: $($updated.Count) repoda yeni commit var:`n" + ($updated -join "`n")
+
+    # Otomatik guncelleme: ~/.claude/skill-autoupdate-off dosyasi varsa kapali.
+    $autoOff = Test-Path "$env:USERPROFILE\.claude\skill-autoupdate-off"
+    if ($autoOff) {
+        $text += "`n(Otomatik guncelleme kapali - skill-autoupdate-off. Elle: install-claude-skills.ps1)"
+    } else {
+        $applyScript = Join-Path $RepoRoot "apply-skill-updates.ps1"
+        $spawned = $false
+        if (Test-Path $applyScript) {
+            try {
+                Start-Process -FilePath "powershell" `
+                    -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$applyScript`"") `
+                    -WindowStyle Hidden | Out-Null
+                $spawned = $true
+            } catch { }
+        }
+        if ($spawned) {
+            $text += "`nOtomatik guncelleme arka planda baslatildi (log: ~/.claude/skill-update-apply.log). Bitince Claude Code'u yeniden baslat."
+        } else {
+            $text += "`n(Otomatik guncelleme baslatilamadi; elle: install-claude-skills.ps1)"
+        }
+    }
 } else {
     $text = "Skill guncelleme kontrolu: izlenen $($repos.Count) repoda yeni bir sey yok."
 }

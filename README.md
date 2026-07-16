@@ -35,16 +35,25 @@ powershell -ExecutionPolicy Bypass -File install-skill-suggestion-hook.ps1
 
 Bu script hook'u `~/.claude/settings.json` içine idempotent olarak ekler (zaten kuruluysa dokunmaz, mevcut hook'ları bozmaz). Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
 
-## Skill güncelleme kontrolü hook'u (oturum başı)
+## Skill güncelleme kontrolü + otomatik güncelleme (oturum başı)
 
-`check-skill-updates.ps1`, `claude-marketplaces.txt`'te izlenen repolarda yeni commit olup olmadığını her oturum başında (`SessionStart`) kontrol edip sonucu sana bildirir. Bu hook'u `~/.claude/settings.json`'a idempotent olarak eklemek için:
+`check-skill-updates.ps1`, `claude-marketplaces.txt`'te izlenen repolarda yeni commit olup olmadığını her oturum başında (`SessionStart`) kontrol eder. Bu hook'u `~/.claude/settings.json`'a idempotent olarak eklemek için:
 
 ```
 git pull
 powershell -ExecutionPolicy Bypass -File install-skill-update-hook.ps1
 ```
 
-Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
+Yeni commit tespit edilirse, `apply-skill-updates.ps1` **arka planda (gizli pencerede)** otomatik başlatılır; tüm marketplace'leri tazeler ve `claude-skills.txt`'teki tüm plugin'leri `claude plugin update` ile en güncel sürüme çeker (zaten güncel olanlar no-op, güvenli). Çıktı `~/.claude/skill-update-apply.log`'a yazılır. Güncellemelerin aktif olması için işlem bitince Claude Code'u yeniden başlat.
+
+Otomatik güncellemeyi **kapatmak** için `~/.claude/skill-autoupdate-off` adında boş bir dosya oluştur — o zaman hook sadece bildirir, kurmaz (elle: `install-claude-skills.ps1`). Güncellemeyi elle tetiklemek veya çalıştırmadan ne yapacağını görmek için:
+
+```
+powershell -ExecutionPolicy Bypass -File apply-skill-updates.ps1          # uygula
+powershell -ExecutionPolicy Bypass -File apply-skill-updates.ps1 -DryRun  # sadece listele
+```
+
+Hook'un aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
 
 ## Headroom (token tasarrufu proxy) kurulumu
 
