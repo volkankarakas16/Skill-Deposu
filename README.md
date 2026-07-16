@@ -55,6 +55,19 @@ powershell -ExecutionPolicy Bypass -File apply-skill-updates.ps1 -DryRun  # sade
 
 Hook'un aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
 
+## find-skills (skills.sh kataloğundan yeni skill bulma)
+
+`find-skills`, `vercel-labs/skills` ekosisteminin "skill bulucu" becerisidir: ne yaptığını anlattığında skills.sh / GitHub kataloğundan uygun skilleri bulup `npx skills add` ile kurmana yardım eder. Bu, bizim `claude plugin` / marketplace sistemimizden **ayrı bir ekosistem** ama tamamlayıcıdır — kurduğu skiller `~/.claude/skills/` altına düşer ve global skill-öneri hook'umuz tarafından her projede görülür/önerilir.
+
+Global kurmak için (Node.js/npx gerekli):
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-find-skills.ps1
+```
+
+**Güncelleme ayrı:** find-skills ile kurulan skiller `~/.agents/.skill-lock.json`'a kaydedilir ve bizim otomatik güncelleme sistemimiz yerine kendi komutuyla güncellenir: `npx skills update`. İki sistem çakışmadan aynı anda çalışır (farklı katalog, konum ve güncelleme komutu).
+
 ## Headroom (token tasarrufu proxy) kurulumu
 
 Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç.
