@@ -66,7 +66,14 @@ git pull
 powershell -ExecutionPolicy Bypass -File install-find-skills.ps1
 ```
 
-**Güncelleme ayrı:** find-skills ile kurulan skiller `~/.agents/.skill-lock.json`'a kaydedilir ve bizim otomatik güncelleme sistemimiz yerine kendi komutuyla güncellenir: `npx skills update`. İki sistem çakışmadan aynı anda çalışır (farklı katalog, konum ve güncelleme komutu).
+**Otomatik güncelleme (oturum başı):** find-skills ile kurulan skiller `~/.agents/.skill-lock.json`'a kaydedilir. `check-agent-skills-updates.ps1`, her Claude Code oturumu başında (SessionStart) throttle'lı (6 saat) olarak `npx skills update -y`'yi **arka planda (gizli pencere)** çalıştırıp bu skilleri güncel tutar. Bu, plugin sistemimizin `claude plugin update` otomatik güncellemesinin skills.sh ekosistemindeki karşılığıdır — **iki sistem ayrı kalır**, yalnızca güncelleme otomasyonu paralel çalışır. Hook'u kurmak için:
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-agent-skills-update-hook.ps1
+```
+
+Kapatmak için `~/.claude/agent-skills-autoupdate-off` adında boş bir dosya oluştur (o zaman güncelleme çalışmaz; elle: `npx skills update`). Log: `~/.claude/agent-skills-update.log`.
 
 ### find-skills ile kurulan skilleri bilgisayarlar arası senkronlama (Yol A: lockfile tabanlı)
 
