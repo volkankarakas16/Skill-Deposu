@@ -68,6 +68,30 @@ powershell -ExecutionPolicy Bypass -File install-find-skills.ps1
 
 **Güncelleme ayrı:** find-skills ile kurulan skiller `~/.agents/.skill-lock.json`'a kaydedilir ve bizim otomatik güncelleme sistemimiz yerine kendi komutuyla güncellenir: `npx skills update`. İki sistem çakışmadan aynı anda çalışır (farklı katalog, konum ve güncelleme komutu).
 
+### find-skills ile kurulan skilleri bilgisayarlar arası senkronlama (Yol A: lockfile tabanlı)
+
+`npx skills` her global kurulumu `~/.agents/.skill-lock.json`'a otomatik kaydettiği için, ayrı bir liste tutmana gerek yok. Akış:
+
+**Kaynak bilgisayarda** (find-skills ile skill kurduktan sonra):
+
+```
+powershell -ExecutionPolicy Bypass -File export-agent-skills.ps1
+git add agent-skills-lock.json
+git commit -m "yeni skills.sh skilleri"
+git push
+```
+
+`export-agent-skills.ps1`, global lockfile'ı repo içine `agent-skills-lock.json` olarak kopyalar.
+
+**Hedef bilgisayarda** (git pull sonrası):
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-agent-skills.ps1
+```
+
+`install-agent-skills.ps1`, `agent-skills-lock.json`'daki **tüm** skilleri (find-skills dahil) `npx skills add ... -g -y` ile kurar. Ne yapacağını görmek için `-DryRun` ekle. Bu script find-skills'i de kapsadığından, hedef makinede `install-find-skills.ps1`'e ayrıca gerek kalmaz — o yalnızca lockfile olmadan hızlı bir "sadece bulucu" kurulumu içindir.
+
 ## Headroom (token tasarrufu proxy) kurulumu
 
 Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç.
