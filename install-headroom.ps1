@@ -192,6 +192,37 @@ function Ensure-OutputShaper {
     Write-Host "settings.json guncellendi: HEADROOM_OUTPUT_SHAPER=1 (kalici)"
 }
 
+function Ensure-ToolSearch {
+    # ENABLE_TOOL_SEARCH, arac semalarini pesin yuklemek yerine ihtiyac aninda
+    # aratan (deferred-tool) mekanizmayi acar; input-token tasarrufu saglar.
+    # HEADROOM_OUTPUT_SHAPER ile ayni yontemle settings.json env bloguna
+    # yaziliyor ki farkli bir bilgisayarda kurulunca da kalici acik kalsin.
+    if (-not (Test-Path $SettingsPath)) {
+        Write-Warning "$SettingsPath bulunamadi, tool-search ayari atlaniyor."
+        return
+    }
+
+    $json = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+
+    if (-not $json.env) {
+        $json | Add-Member -MemberType NoteProperty -Name env -Value ([PSCustomObject]@{})
+    }
+
+    if ($json.env.PSObject.Properties.Name -contains "ENABLE_TOOL_SEARCH" -and $json.env.ENABLE_TOOL_SEARCH -eq "true") {
+        Write-Host "Tool-search zaten kalici olarak ayarli."
+        return
+    }
+
+    if ($json.env.PSObject.Properties.Name -contains "ENABLE_TOOL_SEARCH") {
+        $json.env.ENABLE_TOOL_SEARCH = "true"
+    } else {
+        $json.env | Add-Member -MemberType NoteProperty -Name ENABLE_TOOL_SEARCH -Value "true"
+    }
+
+    Write-JsonNoBom $json
+    Write-Host "settings.json guncellendi: ENABLE_TOOL_SEARCH=true (kalici)"
+}
+
 function Ensure-HiddenProxyLauncher {
     # Scheduled Task headroom.exe'yi DOGRUDAN cagirirsa (proxy zaten calisiyor
     # oldugu icin hemen "port kullanimda" hatasiyla kapansa bile) her 5
@@ -267,6 +298,7 @@ Remove-PreToolUseHook
 Remove-PhantomPlugin
 Ensure-Routing
 Ensure-OutputShaper
+Ensure-ToolSearch
 Ensure-ScheduledTask
 
 Write-Host ""
