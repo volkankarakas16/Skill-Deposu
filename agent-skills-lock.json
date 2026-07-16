@@ -9,6 +9,15 @@
       "skillFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b",
       "installedAt": "2026-07-16T11:47:09.656Z",
       "updatedAt": "2026-07-16T11:47:09.656Z"
+    },
+    "VibeSec-Skill": {
+      "source": "BehiSecc/VibeSec-Skill",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/BehiSecc/VibeSec-Skill.git",
+      "skillPath": "SKILL.md",
+      "skillFolderHash": "0590993b35ad51961f65a4d01cf1196dfead05bb",
+      "installedAt": "2026-07-16T13:26:36.551Z",
+      "updatedAt": "2026-07-16T13:26:36.551Z"
     }
   },
   "dismissed": {}
