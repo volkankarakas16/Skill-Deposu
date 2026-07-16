@@ -24,6 +24,28 @@ powershell -ExecutionPolicy Bypass -File install-global-claude-md.ps1
 
 Bu script `global-CLAUDE.md`'yi `~/.claude/CLAUDE.md` konumuna kopyalar. Kuralı güncellemek için `global-CLAUDE.md`'yi düzenleyip commit + push yap, diğer bilgisayarda yukarıdaki iki komutu çalıştır.
 
+## Skill öneri hook'u (her soruda öneri hatırlatması)
+
+`skill-suggestion-reminder.ps1`, her prompt gönderiminde "bu soruya uygun bir skill/agent var mı, kontrol et ve öner" hatırlatmasını modele enjekte eden bir `UserPromptSubmit` hook script'idir. Bu, `global-CLAUDE.md`'deki öneri kuralını güçlendirir (kural sessizce atlanmasın diye). Yeni bir bilgisayarda kurmak için:
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-skill-suggestion-hook.ps1
+```
+
+Bu script hook'u `~/.claude/settings.json` içine idempotent olarak ekler (zaten kuruluysa dokunmaz, mevcut hook'ları bozmaz). Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
+
+## Skill güncelleme kontrolü hook'u (oturum başı)
+
+`check-skill-updates.ps1`, `claude-marketplaces.txt`'te izlenen repolarda yeni commit olup olmadığını her oturum başında (`SessionStart`) kontrol edip sonucu sana bildirir. Bu hook'u `~/.claude/settings.json`'a idempotent olarak eklemek için:
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-skill-update-hook.ps1
+```
+
+Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
+
 ## Headroom (token tasarrufu proxy) kurulumu
 
 Headroom, Claude Code isteklerini yerel bir proxy üzerinden geçirip context'i sıkıştırarak token tüketimini azaltan bir araç.
