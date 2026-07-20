@@ -17,7 +17,165 @@
       "skillPath": "SKILL.md",
       "skillFolderHash": "0590993b35ad51961f65a4d01cf1196dfead05bb",
       "installedAt": "2026-07-16T13:26:36.551Z",
-      "updatedAt": "2026-07-16T13:26:36.551Z"
+      "updatedAt": "2026-07-16T13:27:23.045Z"
+    },
+    "pdf": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/pdf/SKILL.md",
+      "skillFolderHash": "6369f4649de69bd6857c9bc3b058a77206009238",
+      "pluginName": "document-skills",
+      "installedAt": "2026-07-20T16:44:44.216Z",
+      "updatedAt": "2026-07-20T16:44:44.216Z"
+    },
+    "docx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/docx/SKILL.md",
+      "skillFolderHash": "6e6f5b95c1de6e803cc07b214f5059b074d64e0c",
+      "pluginName": "document-skills",
+      "installedAt": "2026-07-20T16:44:51.469Z",
+      "updatedAt": "2026-07-20T16:44:51.469Z"
+    },
+    "xlsx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/xlsx/SKILL.md",
+      "skillFolderHash": "fe6471cc9b5b97aae0b576ccb92ffd9b0207589d",
+      "pluginName": "document-skills",
+      "installedAt": "2026-07-20T16:44:57.237Z",
+      "updatedAt": "2026-07-20T16:44:57.237Z"
+    },
+    "pptx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/pptx/SKILL.md",
+      "skillFolderHash": "64529c8b3f35fe632b7256bd2f6d46e4b40160ce",
+      "pluginName": "document-skills",
+      "installedAt": "2026-07-20T16:45:07.273Z",
+      "updatedAt": "2026-07-20T16:45:07.273Z"
+    },
+    "doc-coauthoring": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/doc-coauthoring/SKILL.md",
+      "skillFolderHash": "d9df960e61fe2bafe9183e37de6f9f6b73b74087",
+      "pluginName": "example-skills",
+      "installedAt": "2026-07-20T16:45:12.652Z",
+      "updatedAt": "2026-07-20T16:45:12.652Z"
+    },
+    "google-ads-manager": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "google-ads-manager/SKILL.md",
+      "skillFolderHash": "466653091e9fee37bf36af8a919de2e1cd2e3df8",
+      "installedAt": "2026-07-20T16:45:21.713Z",
+      "updatedAt": "2026-07-20T16:45:21.713Z"
+    },
+    "tiktok-marketing": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "tiktok-marketing/SKILL.md",
+      "skillFolderHash": "c259045e71e7d63c24a93e37d694983c2fbe6fdb",
+      "installedAt": "2026-07-20T16:45:30.279Z",
+      "updatedAt": "2026-07-20T16:45:30.279Z"
+    },
+    "whatsapp-automation": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "whatsapp-automation/SKILL.md",
+      "skillFolderHash": "af4070273eef6fa3f9a8f81c857cbd4520bcd9e7",
+      "installedAt": "2026-07-20T16:45:38.518Z",
+      "updatedAt": "2026-07-20T16:45:38.518Z"
+    },
+    "diagram-creator": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "diagram-creator/SKILL.md",
+      "skillFolderHash": "7a5954abf427ff45c1898486e8d94167e562e1ca",
+      "installedAt": "2026-07-20T16:45:47.851Z",
+      "updatedAt": "2026-07-20T16:45:47.851Z"
+    },
+    "n8n-workflow": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "n8n-workflow/SKILL.md",
+      "skillFolderHash": "75feda3f43d1e11e411897c6ad9f811f1f751e51",
+      "installedAt": "2026-07-20T16:45:52.698Z",
+      "updatedAt": "2026-07-20T16:45:52.698Z"
+    },
+    "crypto-report": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "crypto-report/SKILL.md",
+      "skillFolderHash": "88cec6a3da56efc33c92cbe0c4fdebeabf5ffa12",
+      "installedAt": "2026-07-20T16:45:57.234Z",
+      "updatedAt": "2026-07-20T16:45:57.234Z"
+    },
+    "smart-ocr": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "smart-ocr/SKILL.md",
+      "skillFolderHash": "e13bd7e914c0ef114d236c5e9b5898a188475942",
+      "installedAt": "2026-07-20T16:46:02.190Z",
+      "updatedAt": "2026-07-20T16:46:02.190Z"
+    },
+    "office-to-md": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "office-to-md/SKILL.md",
+      "skillFolderHash": "cc5493e9527f92123fef43f7a1688061b34a2420",
+      "installedAt": "2026-07-20T16:46:07.082Z",
+      "updatedAt": "2026-07-20T16:46:07.082Z"
+    },
+    "File Organizer": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "file-organizer/SKILL.md",
+      "skillFolderHash": "36f9ba318828e98fe22841312cd10c56f2ffae25",
+      "installedAt": "2026-07-20T16:56:04.237Z",
+      "updatedAt": "2026-07-20T16:56:04.237Z"
+    },
+    "LinkedIn Automation": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "linkedin-automation/SKILL.md",
+      "skillFolderHash": "8418d9e07c8763a66071e7c996e2371f9d88d71b",
+      "installedAt": "2026-07-20T16:56:08.911Z",
+      "updatedAt": "2026-07-20T16:56:08.911Z"
+    },
+    "Transcription Automation": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "transcription-automation/SKILL.md",
+      "skillFolderHash": "cd2f29c17dfaefb5f255e82d397a756dd72a5661",
+      "installedAt": "2026-07-20T16:56:13.072Z",
+      "updatedAt": "2026-07-20T16:56:13.072Z"
+    },
+    "Facebook/Meta Ads": {
+      "source": "claude-office-skills/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/claude-office-skills/skills.git",
+      "skillPath": "facebook-ads/SKILL.md",
+      "skillFolderHash": "4f5cd99dd171601ff3d8a758325cf189d4d1afb1",
+      "installedAt": "2026-07-20T16:56:17.510Z",
+      "updatedAt": "2026-07-20T16:56:17.510Z"
     }
   },
   "dismissed": {}
