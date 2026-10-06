@@ -118,3 +118,30 @@ Add-MpPreference -ExclusionPath "$env:APPDATA\uv\tools\headroom-ai"
 ```
 
 Kurulum bitince Claude Code'u yeniden başlat ve `headroom doctor` ile doğrula — `claude: routed`, `proxy: pass`, `0 failure(s)` görmen gerekiyor. Ayar kullanıcı genelinde (`~/.claude/settings.json`) olduğu için hangi repo'yu açarsan aç otomatik devrede olur, ekstra bir işlem gerekmez.
+
+## Bulut oturumları (claude.ai/code) — Linux kurulumu
+
+Bulut oturumları Linux konteynerinde çalışır, PowerShell yoktur. `install-cloud-skills.sh` yukarıdaki `.ps1` scriptlerinin bash karşılığıdır ve **aynı listeleri** okur:
+
+- `claude-marketplaces.txt` + `claude-skills.txt` → `claude plugin install`
+- `agent-skills-lock.json` → `npx skills add -g -a claude-code`
+- `global-CLAUDE.md` → `~/.claude/CLAUDE.md`
+- skill-öneri hatırlatma hook'u → `~/.claude/settings.json` (idempotent)
+
+Tek bir kurulum hata verirse diğerlerine devam eder, sonda özet basar ve her zaman 0 ile çıkar (setup script oturumu düşürmesin diye). Tam kurulum ~3 dakika sürer.
+
+```
+bash install-cloud-skills.sh            # kur
+bash install-cloud-skills.sh --dry-run  # sadece listele
+```
+
+**Her bulut oturumunda otomatik kurulum:** Skill-Deposu'nu oturuma ekle ve bulut ortamının **Setup script** alanına (oturum başlığındaki ortam menüsü → Edit) şunu yaz:
+
+```bash
+for d in /home/user/skill-deposu /home/user/Skill-Deposu; do
+  [ -f "$d/install-cloud-skills.sh" ] && { bash "$d/install-cloud-skills.sh"; break; }
+done
+true
+```
+
+Setup script ~5 dakikadan kısa sürerse ortam önbelleğe alınır; sonraki oturumlar kurulu halde başlar. Listeye yeni skill eklediğinde önbellek kendiliğinden yenilenmez — setup script'i küçük bir değişiklikle (ör. sonuna bir yorum satırı) kaydet ki yeniden çalışsın, ya da oturum içinde `bash install-cloud-skills.sh` çalıştır (kurulan skiller bir sonraki mesajda yüklenir).
