@@ -83,19 +83,29 @@ else
 import json, os, sys
 path = sys.argv[1]
 settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+# skill-suggestion-reminder.ps1 ile ayni metin; tek tirnak icermemeli (echo '...').
 reminder = ("Bu soruya uygun bir skill veya agent var mi kontrol et ve varsa oner "
-            "(bu preamble/postamble sayilmaz, atlama).")
+            "(bu preamble/postamble sayilmaz, atlama). "
+            "Cevabi global CLAUDE.md dosyasindaki STE-TR yazim ve sema kurallarina gore yaz.")
 payload = json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
                                              "additionalContext": reminder}})
 command = "echo '" + payload + "'"
 groups = settings.setdefault("hooks", {}).setdefault("UserPromptSubmit", [])
-if any(h.get("command") == command for g in groups for h in g.get("hooks", [])):
+# Metin degisse de eski hook'u tani: sabit parcayla ara, bulunani guncelle.
+existing = [h for g in groups for h in g.get("hooks", [])
+            if "skill veya agent" in h.get("command", "")]
+if existing and all(h["command"] == command for h in existing):
     print("Zaten kurulu.")
 else:
-    groups.append({"hooks": [{"type": "command", "command": command}]})
+    if existing:
+        for h in existing:
+            h["command"] = command
+        print("Guncellendi.")
+    else:
+        groups.append({"hooks": [{"type": "command", "command": command}]})
+        print("Eklendi.")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)
-    print("Eklendi.")
 PY
 fi
 
