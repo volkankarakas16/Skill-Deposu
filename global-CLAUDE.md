@@ -17,6 +17,8 @@ Kurulu tüm Claude Code skill'leri ve agent'lar için:
 
 ASD-STE100'ün Türkçe uyarlaması. Yalnızca kullanıcı ile Claude arasında kalan metinlere uygulanır.
 
+**Cevap dili:** Her projede Türkçe. Araç çıktısı, log veya kaynak kod İngilizce olsa da cevap Türkçe yazılır (2026-10-08: uzun İngilizce çıktılardan sonra cevaplar İngilizceye kaydı).
+
 **Kapsam:**
 - STE-TR: sohbet cevapları; kullanıcıya özel belgeler (plan, grill-me özeti, not).
 - Normal stil: üçüncü kişiye giden her şey (müşteri yazısı, resmi yazı, yayın). Commit mesajı, kod ve kod yorumu projenin mevcut stilinde kalır.
