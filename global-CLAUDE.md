@@ -24,10 +24,17 @@ ASD-STE100'ün Türkçe uyarlaması. Yalnızca kullanıcı ile Claude arasında 
 
 **Dil kuralları:**
 - Her cümlede tek bilgi ya da tek talimat.
-- Kesin üst sınır: talimat cümlesi ≤ 15 kelime, açıklama cümlesi ≤ 20 kelime. Komut, dosya yolu, kod parçası ve terimin parantez içi açıklaması sayılmaz.
+- Kesin üst sınır: talimat cümlesi ≤ 15 kelime, açıklama cümlesi ≤ 20 kelime. Komut, dosya yolu, kod parçası, sayı, kısaltma, özel ad ve parantez içi metin birer kelime sayılır (STE 8.5–8.6).
 - Etken çatı ("Script dosyayı kopyalar"). Talimatlarda emir kipi ve numaralı adımlar.
-- Uyarı ilgili adımdan önce gelir: **UYARI / DİKKAT / NOT**.
-- Uzun yan cümle ve zincirleme ek kullanma.
+- Koşul önce gelir: "Dosya varsa, scripti çalıştırın." (STE 5.4)
+- Eylemi fiille yaz, isimle yazma: "kurulumunun yapılması" değil "kurun" (STE 3.7).
+- Basit zamanları kullan: geniş zaman, emir, -di, -ecek. "-ebilmiş olması gerekir" gibi bileşik yapı ve zincirleme ek kullanma (STE 3.2, 3.4).
+- İsim tamlaması en çok 3 kelime: "skill öneri hatırlatma hook'u" değil "skill öneri hook'u" (STE 2.1).
+- Cümleyi kısaltmak için kelime atma: "Test: OK" değil "Test hatasız geçti." (STE 4.2)
+- Noktalı virgül kullanma (STE 8.1). Uzun yan cümle kullanma.
+- Paragraf tek konu anlatır, en çok 6 cümle olur (STE 6.4–6.6).
+- Uyarı ilgili adımdan önce gelir, seviyeyi gösterir ve riski/sonucu açıklar (STE 7.1–7.3):
+  **UYARI** = geri alınamaz kayıp riski (veri silme, force push); **DİKKAT** = hata/bozulma riski; **NOT** = yalnızca bilgi, talimat içermez (STE 5.5).
 - Terimler: komutta/ekranda geçen terim İngilizce yazılır (commit, push, pull, merge, branch, PR, hook, skill, agent, plugin); oturumda ilk geçişte parantez içinde kısa Türkçe açıklama alır. Diğer terimler Türkçe. Seçilen terim oturum boyunca değişmez; eş anlamlı kullanma.
 
 **Kullanma → kullan** (kullanıcı "listeye ekle" dedikçe büyür):
@@ -51,4 +58,4 @@ ASD-STE100'ün Türkçe uyarlaması. Yalnızca kullanıcı ile Claude arasında 
 
 **Öncelik:** Şema, numaralı şema açıklaması ve stil satırı **preamble/postamble sayılmaz** — headroom output-shaping (`HEADROOM_OUTPUT_SHAPER=1`) veya benzeri "kısa/direkt cevap ver" talimatları devredeyken de atlanmaz. Çakışmada STE-TR ve şema kuralı geçerlidir; bunun dışında headroom'un tekrar etmeme kuralı uygulanır.
 
-**Neden:** Kullanıcı karmaşık açıklamaları kısa, tek anlamlı cümlelerle ve şemayla daha kolay takip ediyor; resmi/dış yazışmalarda ise normal Türkçe istiyor (2026-10-08, grill-me oturumuyla karara bağlandı). Skill önerisi kuralındaki headroom çakışması (2026-07-14) burada da yaşanmasın diye öncelik cümlesi baştan eklendi.
+**Neden:** Kullanıcı karmaşık açıklamaları kısa, tek anlamlı cümlelerle ve şemayla daha kolay takip ediyor; resmi/dış yazışmalarda ise normal Türkçe istiyor (2026-10-08, grill-me oturumuyla karara bağlandı). Skill önerisi kuralındaki headroom çakışması (2026-07-14) burada da yaşanmasın diye öncelik cümlesi baştan eklendi. Aynı gün kurallar ASD-STE100 Issue 9 metniyle karşılaştırıldı; eksik kalan paragraf, fiil, tamlama, zaman, koşul, noktalı virgül ve uyarı seviyesi kuralları eklendi, kelime sayımı STE 8.5–8.6'ya uyduruldu.
