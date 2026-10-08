@@ -126,6 +126,7 @@ Bulut oturumları Linux konteynerinde çalışır, PowerShell yoktur. `install-c
 - `claude-marketplaces.txt` + `claude-skills.txt` → `claude plugin install`
 - `agent-skills-lock.json` → `npx skills add -g -a claude-code`
 - `global-CLAUDE.md` → `~/.claude/CLAUDE.md`
+- cevap dili `language: "turkish"` → `~/.claude/settings.json` (Windows'ta `install-global-claude-md.ps1` yapar)
 - skill-öneri hatırlatma hook'u → `~/.claude/settings.json` (idempotent)
 
 Tek bir kurulum hata verirse diğerlerine devam eder, sonda özet basar ve her zaman 0 ile çıkar (setup script oturumu düşürmesin diye). Tam kurulum ~3 dakika sürer.

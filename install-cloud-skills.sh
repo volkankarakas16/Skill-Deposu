@@ -4,6 +4,7 @@
 #   - claude-marketplaces.txt + claude-skills.txt  -> claude plugin install
 #   - agent-skills-lock.json                       -> npx skills add -g
 #   - global-CLAUDE.md                             -> ~/.claude/CLAUDE.md
+#   - cevap dili (language=turkish)                -> ~/.claude/settings.json
 #   - skill-oneri hatirlatma hook'u                -> ~/.claude/settings.json
 #
 # Bulut ortaminin "setup script" alanindan cagrilmak uzere yazildi (oturum
@@ -75,6 +76,22 @@ echo "== Global CLAUDE.md =="
 run mkdir -p "$HOME/.claude"
 run cp "$DIR/global-CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 
+# Cevap dili: install-global-claude-md.ps1 ile ayni "language" ayari.
+if [ "$DRY_RUN" = 1 ]; then
+    echo "DRYRUN: ~/.claude/settings.json language=turkish yapilacak"
+else
+    python3 - "$HOME/.claude/settings.json" <<'PY' || failed+=("settings:language")
+import json, os, sys
+path = sys.argv[1]
+settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+if settings.get("language") != "turkish":
+    settings["language"] = "turkish"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+    print("settings.json: language=turkish")
+PY
+fi
+
 echo "== Skill-oneri hook'u =="
 if [ "$DRY_RUN" = 1 ]; then
     echo "DRYRUN: UserPromptSubmit hook'u ~/.claude/settings.json'a eklenecek"
@@ -86,7 +103,8 @@ settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else 
 # skill-suggestion-reminder.ps1 ile ayni metin; tek tirnak icermemeli (echo '...').
 reminder = ("Bu soruya uygun bir skill veya agent var mi kontrol et ve varsa oner "
             "(bu preamble/postamble sayilmaz, atlama). "
-            "Cevabi global CLAUDE.md dosyasindaki STE-TR yazim ve sema kurallarina gore yaz.")
+            "Cevabi ve ara mesajlari TURKCE yaz (arac ciktisi Ingilizce olsa da), "
+            "global CLAUDE.md dosyasindaki STE-TR yazim ve sema kurallarina gore.")
 payload = json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
                                              "additionalContext": reminder}})
 command = "echo '" + payload + "'"
