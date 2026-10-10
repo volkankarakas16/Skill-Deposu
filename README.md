@@ -35,6 +35,51 @@ powershell -ExecutionPolicy Bypass -File install-skill-suggestion-hook.ps1
 
 Bu script hook'u `~/.claude/settings.json` içine idempotent olarak ekler (zaten kuruluysa dokunmaz, mevcut hook'ları bozmaz). Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
 
+## STE-TR yazım denetimi hook'u (cevap bitince denetler)
+
+`ste-tr-denetim.ps1`, Claude her cevabı bitirdiğinde çalışan bir `Stop` hook
+script'idir. Son asistan mesajını okur ve `global-CLAUDE.md`'deki STE-TR yazım
+kurallarına aykırı yerleri arar. İhlal bulursa cevabı **engeller**; Claude
+düzeltip yeniden yazar.
+
+Neden gerekli: `skill-suggestion-reminder.ps1` kuralı her istekte hatırlatıyor,
+ama o hook istekten **önce** çalıştığı için cevabı göremiyor. 2026-10-11'de
+kuralın hatırlatmaya rağmen uygulanmadığı tespit edildi. Bu script cevabı görür.
+
+Denetlenen üç şey:
+
+1. Noktalı virgül (STE 8.1).
+2. 20 kelimeyi aşan açıklama cümlesi (STE 8.5-8.6).
+3. `global-CLAUDE.md`'deki "kullanma → kullan" tablosundaki kesin kalıplar
+   (gerçekleştirmek, -mektedir, bulunmaktadır, söz konusu, hususunda, nezdinde,
+   gerekmektedir). "ilgili" ve "sağlamak" bilerek listede değil — doğru
+   kullanımları da var ve yanlış uyarı üretirlerdi.
+
+Ölçüm kod **dışında** yapılır: kod blokları, satır içi kod, tablo satırları ve
+bağlantı adresleri elenir. Oralardaki noktalı virgül yazım hatası değildir.
+`stop_hook_active` bayrağı geldiğinde hiç denetim yapmaz, yani aynı cevap ikinci
+kez engellenmez ve sonsuz döngü oluşmaz.
+
+Yanlış uyarı oranı ölçüldü: son 12 cevaptan 1 tanesi engellenirdi.
+
+Yeni bir bilgisayarda kurmak için:
+
+```
+git pull
+powershell -ExecutionPolicy Bypass -File install-ste-tr-hook.ps1
+```
+
+Script hook'u `~/.claude/settings.json` içine idempotent olarak ekler (zaten
+kuruluysa dokunmaz, mevcut hook'ları bozmaz). Aktif olması için Claude Code'u
+yeniden başlat.
+
+Kapatmak için `~/.claude/settings.json` içinde `hooks.Stop` altındaki
+`ste-tr-denetim.ps1` girdisini sil.
+
+**Not:** `ste-tr-denetim.ps1` dosyası **UTF-8 BOM** ile kaydedilmelidir.
+PowerShell 5.1 BOM'suz dosyadaki Türkçe karakterleri bozuyor ve regex'ler
+eşleşmiyor. Script'i düzenledikten sonra BOM'un kaybolmadığını doğrula.
+
 ## Skill güncelleme kontrolü + otomatik güncelleme (oturum başı)
 
 `check-skill-updates.ps1`, `claude-marketplaces.txt`'te izlenen repolarda yeni commit olup olmadığını her oturum başında (`SessionStart`) kontrol eder. Bu hook'u `~/.claude/settings.json`'a idempotent olarak eklemek için:
