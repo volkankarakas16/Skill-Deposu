@@ -41,23 +41,34 @@ PY
 }
 
 # Her repo icin "tur<TAB>repo<TAB>sha" yazar; ulasilamayan repo atlanir.
+# Repolar paralel sorgulanir: oturum acilisi en kotu durumda ~5 sn bekler.
 current_heads() {
     tracked_repos | while IFS=$'\t' read -r kind repo; do
         # </dev/null: git, dongunun okudugu repo listesini tuketmesin.
-        sha=$(timeout 15 git ls-remote "https://github.com/$repo" HEAD </dev/null 2>/dev/null | cut -f1)
-        [ -n "$sha" ] && printf '%s\t%s\t%s\n' "$kind" "$repo" "$sha"
+        # GIT_TERMINAL_PROMPT=0: ozel/silinmis repoda kimlik sormadan dussun.
+        ( sha=$(GIT_TERMINAL_PROMPT=0 timeout 5 git ls-remote "https://github.com/$repo" HEAD </dev/null 2>/dev/null | cut -f1)
+          [ -n "$sha" ] && printf '%s\t%s\t%s\n' "$kind" "$repo" "$sha" ) &
     done
+    wait
 }
 
+# Tabani gunceller: ulasilamayan repo eski SHA'sini korur, yazim atomiktir.
+# Hic SHA alinamazsa tabani degistirmez ve 1 doner.
 write_state() {
     mkdir -p "$(dirname "$STATE")"
     current_heads | python3 -c '
-import json, sys
-state = {}
+import json, os, sys
+path = sys.argv[1]
+state = json.load(open(path)) if os.path.exists(path) else {}
+seen = 0
 for line in sys.stdin:
-    kind, repo, sha = line.rstrip("\n").split("\t")
+    kind, repo, sha = line.rstrip("\r\n").split("\t")
     state[repo] = {"kind": kind, "sha": sha}
-json.dump(state, open(sys.argv[1], "w"), indent=2)
+    seen += 1
+if not seen:
+    sys.exit(1)
+json.dump(state, open(path + ".tmp", "w"), indent=2)
+os.replace(path + ".tmp", path)
 ' "$STATE"
 }
 
@@ -72,17 +83,25 @@ run() {
         log "DRYRUN: $*"
         return 0
     fi
-    "$@" >>"$LOG" 2>&1 || log "  HATA ($?): $*"
+    timeout 300 "$@" >>"$LOG" 2>&1 || log "  HATA ($?): $*"
 }
 
 case "$MODE" in
 --record)
-    write_state
-    echo "Guncelleme tabani yazildi: $STATE"
+    if write_state; then
+        echo "Guncelleme tabani yazildi: $STATE"
+    else
+        echo "Guncelleme tabani yazilamadi: hicbir repoya ulasilamadi." >&2
+        exit 1
+    fi
     ;;
 
 --apply)
     kinds="${2:-plugin,skill}"
+    # Ayni oturumda ikinci bir --apply calismasin (mkdir atomiktir).
+    LOCK="$HOME/.claude/cloud-skill-update.lock"
+    mkdir "$LOCK" 2>/dev/null || { log "Baska bir guncelleme calisiyor, atlandi."; exit 0; }
+    trap 'rmdir "$LOCK"' EXIT
     log "=== cloud-skill-update basladi (tur: $kinds) ==="
     if [[ "$kinds" == *plugin* ]]; then
         while read -r m; do run claude plugin marketplace add "$m"; done < <(list_entries "$DIR/claude-marketplaces.txt")
@@ -91,22 +110,22 @@ case "$MODE" in
     if [[ "$kinds" == *skill* ]]; then
         run npx -y skills update -y </dev/null
     fi
-    write_state
-    log "=== bitti. Guncel skill'ler bir sonraki mesajdan itibaren yuklenir. ==="
+    # Taban yalnizca bu oturum icin yenilenir; container onbellegi eski tabanla
+    # kaldigi icin ayni guncelleme sonraki oturumlarda tekrarlanir.
+    write_state || log "Taban yenilenemedi."
+    log "=== bitti. Guncel skill'ler yeni oturumda kesin yuklenir. ==="
     ;;
 
 check)
     [ -f "$HOME/.claude/skill-autoupdate-off" ] && exit 0
-    # Taban yoksa (setup script eski surumle kurulduysa) simdi yaz, guncelleme yapma.
-    if [ ! -f "$STATE" ]; then
-        write_state
-        exit 0
-    fi
+    # Taban yoksa setup script eski surumle kurulmus demektir. Oturumda yazilan
+    # taban onbellege girmez, bu yuzden burada yazmak bosuna zaman harcar.
+    [ -f "$STATE" ] || exit 0
     changed=$(current_heads | python3 -c '
 import json, sys
 state = json.load(open(sys.argv[1]))
 for line in sys.stdin:
-    kind, repo, sha = line.rstrip("\n").split("\t")
+    kind, repo, sha = line.rstrip("\r\n").split("\t")
     prev = state.get(repo, {}).get("sha")
     if prev and prev != sha:
         print(f"{kind}\t{repo}")
@@ -114,8 +133,12 @@ for line in sys.stdin:
     [ -z "$changed" ] && exit 0
     kinds=$(cut -f1 <<<"$changed" | sort -u | paste -sd, -)
     # Arka planda calistir: oturum acilisi beklemesin, ciktilar log'a gitsin.
-    nohup setsid bash "$DIR/cloud-skill-update.sh" --apply "$kinds" >/dev/null 2>&1 </dev/null &
-    session_context "Skill guncelleme kontrolu (bulut): yeni commit olan repolar: $(cut -f2 <<<"$changed" | paste -sd, - | sed 's/,/, /g'). Guncelleme arka planda baslatildi (log: ~/.claude/cloud-skill-update.log); guncel skill'ler bir sonraki mesajdan itibaren yuklenir."
+    if command -v setsid >/dev/null 2>&1; then
+        nohup setsid bash "$DIR/cloud-skill-update.sh" --apply "$kinds" >/dev/null 2>&1 </dev/null &
+    else
+        nohup bash "$DIR/cloud-skill-update.sh" --apply "$kinds" >/dev/null 2>&1 </dev/null &
+    fi
+    session_context "Skill guncelleme kontrolu (bulut): yeni commit olan repolar: $(cut -f2 <<<"$changed" | paste -sd, - | sed 's/,/, /g'). Guncelleme arka planda baslatildi; sonucu ~/.claude/cloud-skill-update.log dosyasinda. Guncel skill'ler genelde bir sonraki mesajda, kesin olarak yeni oturumda yuklenir."
     ;;
 
 *)

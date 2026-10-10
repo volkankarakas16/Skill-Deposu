@@ -139,19 +139,19 @@ path, script = sys.argv[1], sys.argv[2]
 settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
 # Repo bu oturuma eklenmediyse hook sessizce gecsin.
 command = f'f="{script}"; [ -f "$f" ] && bash "$f" || true'
+# matcher "startup": resume/clear/compact'ta tekrar calismasin.
+# timeout 20: ls-remote takilsa bile oturum acilisi en cok 20 sn bekler.
+hook = {"type": "command", "command": command, "timeout": 20}
 groups = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
-existing = [h for g in groups for h in g.get("hooks", [])
-            if "cloud-skill-update.sh" in h.get("command", "")]
-if existing and all(h["command"] == command for h in existing):
+existing = [g for g in groups
+            if any("cloud-skill-update.sh" in h.get("command", "") for h in g.get("hooks", []))]
+if len(existing) == 1 and existing[0] == {"matcher": "startup", "hooks": [hook]}:
     print("Zaten kurulu.")
 else:
-    if existing:
-        for h in existing:
-            h["command"] = command
-        print("Guncellendi.")
-    else:
-        groups.append({"hooks": [{"type": "command", "command": command}]})
-        print("Eklendi.")
+    for g in existing:
+        groups.remove(g)
+    groups.append({"matcher": "startup", "hooks": [hook]})
+    print("Guncellendi." if existing else "Eklendi.")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)
 PY
