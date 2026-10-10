@@ -145,4 +145,6 @@ done
 true
 ```
 
+**Oturum-başı otomatik güncelleme:** `install-cloud-skills.sh` kurulum anındaki marketplace ve skills.sh kaynak repolarının son commit'lerini `~/.claude/cloud-skill-update-state.json`'a yazar ve `cloud-skill-update.sh`'i SessionStart hook'u olarak kaydeder. Her bulut oturumu başında hook bu repoları `git ls-remote` ile kontrol eder (birkaç saniye); yeni commit varsa plugin'leri ve/veya skills.sh skill'lerini **arka planda** günceller (log: `~/.claude/cloud-skill-update.log`). Güncel skill'ler bir sonraki mesajdan itibaren yüklenir. Bu, Windows'taki `check-skill-updates.ps1` / `check-agent-skills-updates.ps1` hook'larının karşılığıdır. Güncelleme container önbelleğine yazılmaz, yani önbellek eskidikçe her oturumda tekrarlanır. Kapatmak için `~/.claude/skill-autoupdate-off` dosyasını oluştur.
+
 Setup script ~5 dakikadan kısa sürerse ortam önbelleğe alınır; sonraki oturumlar kurulu halde başlar. Listeye yeni skill eklediğinde önbellek kendiliğinden yenilenmez — setup script'i küçük bir değişiklikle (ör. sonuna bir yorum satırı) kaydet ki yeniden çalışsın, ya da oturum içinde `bash install-cloud-skills.sh` çalıştır (kurulan skiller bir sonraki mesajda yüklenir).

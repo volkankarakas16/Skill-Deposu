@@ -6,6 +6,7 @@
 #   - global-CLAUDE.md                             -> ~/.claude/CLAUDE.md
 #   - cevap dili (language=turkish)                -> ~/.claude/settings.json
 #   - skill-oneri hatirlatma hook'u                -> ~/.claude/settings.json
+#   - oturum-basi guncelleme hook'u                -> cloud-skill-update.sh (SessionStart)
 #
 # Bulut ortaminin "setup script" alanindan cagrilmak uzere yazildi (oturum
 # baslamadan once calisir, boylece skiller ilk mesajdan itibaren yuklu olur).
@@ -112,6 +113,35 @@ groups = settings.setdefault("hooks", {}).setdefault("UserPromptSubmit", [])
 # Metin degisse de eski hook'u tani: sabit parcayla ara, bulunani guncelle.
 existing = [h for g in groups for h in g.get("hooks", [])
             if "skill veya agent" in h.get("command", "")]
+if existing and all(h["command"] == command for h in existing):
+    print("Zaten kurulu.")
+else:
+    if existing:
+        for h in existing:
+            h["command"] = command
+        print("Guncellendi.")
+    else:
+        groups.append({"hooks": [{"type": "command", "command": command}]})
+        print("Eklendi.")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+PY
+fi
+
+echo "== Oturum-basi guncelleme hook'u =="
+if [ "$DRY_RUN" = 1 ]; then
+    echo "DRYRUN: guncelleme tabani yazilacak, SessionStart hook'u ~/.claude/settings.json'a eklenecek"
+else
+    bash "$DIR/cloud-skill-update.sh" --record || failed+=("update:record")
+    python3 - "$HOME/.claude/settings.json" "$DIR/cloud-skill-update.sh" <<'PY' || failed+=("hook:skill-update")
+import json, os, sys
+path, script = sys.argv[1], sys.argv[2]
+settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+# Repo bu oturuma eklenmediyse hook sessizce gecsin.
+command = f'f="{script}"; [ -f "$f" ] && bash "$f" || true'
+groups = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
+existing = [h for g in groups for h in g.get("hooks", [])
+            if "cloud-skill-update.sh" in h.get("command", "")]
 if existing and all(h["command"] == command for h in existing):
     print("Zaten kurulu.")
 else:
