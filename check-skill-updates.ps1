@@ -12,6 +12,11 @@
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = $PSScriptRoot
+
+# Eksik hook kurulumlarini kendiliginden tamamla. EN BASTA duruyor: asagidaki
+# throttle erken cikabiliyor ve kurulum o zaman hic calismazdi. Kullanici her
+# bilgisayarda elle "install-...ps1" kosmak zorunda kalmasin diye burada.
+try { & (Join-Path $RepoRoot "ensure-hooks.ps1") *> $null } catch { }
 $MarketplacesFile = Join-Path $RepoRoot "claude-marketplaces.txt"
 $StatePath = "$env:USERPROFILE\.claude\skill-update-state.json"
 $ThrottleHours = 6

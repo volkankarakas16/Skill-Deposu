@@ -35,6 +35,42 @@ powershell -ExecutionPolicy Bypass -File install-skill-suggestion-hook.ps1
 
 Bu script hook'u `~/.claude/settings.json` içine idempotent olarak ekler (zaten kuruluysa dokunmaz, mevcut hook'ları bozmaz). Aktif olması için Claude Code'u yeniden başlat (veya `/hooks` menüsünü bir kez aç).
 
+## Otomatik kurulum (elle komut girmeye gerek yok)
+
+`ensure-hooks.ps1`, hook kurulumlarının hepsini her oturum başında idempotent
+olarak tazeler. `check-skill-updates.ps1` en başında bunu çağırır, o da zaten
+`SessionStart` hook'una bağlıdır. Sonuç: **`git pull` yaptıktan sonra ilk
+Claude Code oturumunda eksik kurulumlar kendiliğinden tamamlanır.**
+
+Tazelenen kurulumlar:
+
+- `install-global-claude-md.ps1`
+- `install-skill-suggestion-hook.ps1`
+- `install-skill-update-hook.ps1`
+- `install-agent-skills-update-hook.ps1`
+- `install-ste-tr-hook.ps1`
+
+Plugin kuran betikler (`install-claude-skills.ps1`, `install-agent-skills.ps1`)
+bilerek dışarıda. Onlar dakikalarca sürebiliyor ve oturum açılışını bekletirdi.
+
+Her oturumda beş betik boşuna koşmasın diye bir damga kullanılır:
+`~/.claude/hooks-ensured` dosyası Skill Deposu'nun son commit hash'ini tutar.
+Hash değişmediyse `ensure-hooks.ps1` hiç çalışmaz. Kurulumu zorla tazelemek
+için bu dosyayı sil.
+
+Tek bir kurulum patlarsa oturum açılışı kırılmaz. Hata `stderr`'e yazılır ve
+kalan kurulumlar devam eder.
+
+**Tavuk-yumurta notu:** Bu mekanizma `check-skill-updates.ps1` üzerinden
+çalışır, yani o hook'un `settings.json` içinde zaten kurulu olması gerekir.
+Bomboş bir bilgisayarda bir kez şunu çalıştır:
+
+```
+powershell -ExecutionPolicy Bypass -File install-skill-update-hook.ps1
+```
+
+Ondan sonrası kendiliğinden yürür.
+
 ## STE-TR yazım denetimi hook'u (cevap bitince denetler)
 
 `ste-tr-denetim.ps1`, Claude her cevabı bitirdiğinde çalışan bir `Stop` hook
