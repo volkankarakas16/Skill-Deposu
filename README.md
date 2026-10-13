@@ -116,6 +116,10 @@ Kapatmak için `~/.claude/settings.json` içinde `hooks.Stop` altındaki
 PowerShell 5.1 BOM'suz dosyadaki Türkçe karakterleri bozuyor ve regex'ler
 eşleşmiyor. Script'i düzenledikten sonra BOM'un kaybolmadığını doğrula.
 
+**Bulut (Linux):** PowerShell olmadığı için bulut oturumlarında aynı denetimi
+`ste-tr-denetim.py` yapar; `install-cloud-skills.sh` onu `Stop` hook'u olarak
+kaydeder. Kurallardan birini değiştirirsen iki dosyayı birlikte güncelle.
+
 ## Skill güncelleme kontrolü + otomatik güncelleme (oturum başı)
 
 `check-skill-updates.ps1`, `claude-marketplaces.txt`'te izlenen repolarda yeni commit olup olmadığını her oturum başında (`SessionStart`) kontrol eder. Bu hook'u `~/.claude/settings.json`'a idempotent olarak eklemek için:
@@ -209,6 +213,7 @@ Bulut oturumları Linux konteynerinde çalışır, PowerShell yoktur. `install-c
 - `global-CLAUDE.md` → `~/.claude/CLAUDE.md`
 - cevap dili `language: "turkish"` → `~/.claude/settings.json` (Windows'ta `install-global-claude-md.ps1` yapar)
 - skill-öneri hatırlatma hook'u → `~/.claude/settings.json` (idempotent)
+- STE-TR yazım denetimi `Stop` hook'u → `ste-tr-denetim.py` (`ste-tr-denetim.ps1`'in Python karşılığı, aynı kurallar; idempotent, diğer `Stop` hook'larına dokunmaz)
 
 Tek bir kurulum hata verirse diğerlerine devam eder, sonda özet basar ve her zaman 0 ile çıkar (setup script oturumu düşürmesin diye). Tam kurulum ~3 dakika sürer.
 
