@@ -7,6 +7,8 @@
 #   - cevap dili (language=turkish)                -> ~/.claude/settings.json
 #   - skill-oneri hatirlatma hook'u                -> ~/.claude/settings.json
 #   - oturum-basi guncelleme hook'u                -> cloud-skill-update.sh (SessionStart)
+#   - repo esitleme hook'u                         -> cloud-repo-sync.sh (SessionStart)
+#   - PowerShell (pwsh)                            -> .ps1 betiklerini bulutta test icin
 #   - STE-TR yazim denetimi hook'u                 -> ste-tr-denetim.py (Stop)
 #
 # Bulut ortaminin "setup script" alanindan cagrilmak uzere yazildi (oturum
@@ -156,6 +158,57 @@ else:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)
 PY
+fi
+
+echo "== Repo esitleme hook'u =="
+if [ "$DRY_RUN" = 1 ]; then
+    echo "DRYRUN: SessionStart hook'u (cloud-repo-sync.sh) ~/.claude/settings.json'a eklenecek"
+else
+    python3 - "$HOME/.claude/settings.json" "$DIR/cloud-repo-sync.sh" <<'PY' || failed+=("hook:repo-sync")
+import json, os, sys
+path, script = sys.argv[1], sys.argv[2]
+settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+command = f'f="{script}"; [ -f "$f" ] && bash "$f" || true'
+# resume: gunlerce suren oturum devam ettirildiginde de GitHub'dan ceksin.
+hook = {"type": "command", "command": command, "timeout": 30}
+want = {"matcher": "startup|resume", "hooks": [hook]}
+groups = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
+mine = lambda h: "cloud-repo-sync.sh" in h.get("command", "")
+existing = [g for g in groups if any(mine(h) for h in g.get("hooks", []))]
+if existing == [want]:
+    print("Zaten kurulu.")
+else:
+    for g in groups:
+        g["hooks"] = [h for h in g.get("hooks", []) if not mine(h)]
+    groups[:] = [g for g in groups if g["hooks"]]
+    groups.append(want)
+    print("Guncellendi." if existing else "Eklendi.")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+PY
+fi
+
+echo "== PowerShell =="
+# ste-tr-denetim.ps1 gibi Windows betikleri bulutta da test edilebilsin.
+# Kurulamazsa yalnizca uyari: bulutta denetimi ste-tr-denetim.py yapar.
+if command -v pwsh >/dev/null 2>&1; then
+    echo "Zaten kurulu: $(pwsh -NoProfile -c '$PSVersionTable.PSVersion.ToString()')"
+elif [ "$DRY_RUN" = 1 ]; then
+    echo "DRYRUN: powershell paketi packages.microsoft.com'dan kurulacak"
+elif command -v apt-get >/dev/null 2>&1 && [ -r /etc/os-release ]; then
+    . /etc/os-release
+    tmp=$(mktemp -d)
+    if curl -sSfL -o "$tmp/ms.deb" "https://packages.microsoft.com/config/${ID}/${VERSION_ID}/packages-microsoft-prod.deb" \
+        && dpkg -i "$tmp/ms.deb" >/dev/null \
+        && apt-get update -qq >/dev/null 2>&1 \
+        && apt-get install -y -qq powershell >/dev/null 2>&1; then
+        echo "Kuruldu: $(pwsh -NoProfile -c '$PSVersionTable.PSVersion.ToString()')"
+    else
+        echo "PowerShell kurulamadi (atlaniyor)." >&2
+    fi
+    rm -rf -- "$tmp"
+else
+    echo "apt-get yok, PowerShell atlaniyor." >&2
 fi
 
 echo "== STE-TR denetim hook'u =="

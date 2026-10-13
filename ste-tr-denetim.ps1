@@ -39,13 +39,40 @@ if (-not $yol -or -not (Test-Path $yol)) { exit 0 }
 # Transcript JSONL. Sondan geriye tarayip ilk asistan METIN mesajini aliyoruz;
 # arac cagrilari metin tasimaz, onlar atlanir.
 $metin = ""
+# Dosyanin yalnizca son 4 MB'i okunur. Get-Content -Tail cok uzun satirli
+# transcript'te yavas: 2 MB'lik bir dosyada 29 sn olculdu, hook 20 sn'de
+# kesiliyor. ReadWrite paylasimi: Claude dosyaya yazmaya devam ediyor.
 # 1500 satir: uzun arac dizilerinde son METIN mesaji cok geride kalabilir.
-# -Tail dosyayi sondan okuyor, 27 MB'lik bir transcript'te bile hizli.
-$satirlar = Get-Content $yol -Tail 1500 -Encoding UTF8
+$fs = [System.IO.File]::Open($yol, 'Open', 'Read', 'ReadWrite')
+try {
+    $bas = [Math]::Max(0, $fs.Length - 4MB)
+    [void]$fs.Seek($bas, 'Begin')
+    $buf = New-Object byte[] ($fs.Length - $bas)
+    $okunan = 0
+    while ($okunan -lt $buf.Length) {
+        $n = $fs.Read($buf, $okunan, $buf.Length - $okunan)
+        if ($n -le 0) { break }
+        $okunan += $n
+    }
+} finally { $fs.Close() }
+# Yarim kalan ilk satir JSON olarak cozulemez ve dongude atlanir.
+$satirlar = [System.Text.Encoding]::UTF8.GetString($buf, 0, $okunan) -split "`r?`n"
+if ($satirlar.Count -gt 1500) {
+    $satirlar = $satirlar[($satirlar.Count - 1500)..($satirlar.Count - 1)]
+}
 for ($i = $satirlar.Count - 1; $i -ge 0; $i--) {
     $s = $satirlar[$i]
     if (-not $s) { continue }
     try { $o = $s | ConvertFrom-Json } catch { continue }
+    # Gercek kullanici mesajinda dur: bu turda metin yoksa onceki turun
+    # cevabi yeniden engellenmesin. Arac sonucu (tool_result) ve sistem
+    # hatirlatmasi (isMeta) turu bitirmez.
+    if ($o.type -eq "user" -and -not $o.isMeta) {
+        $c = $o.message.content
+        if ($c -is [string]) { break }
+        if (@($c | Where-Object { $_.type -eq "text" }).Count -gt 0) { break }
+        continue
+    }
     if ($o.type -ne "assistant") { continue }
     $parcalar = $o.message.content
     if (-not $parcalar) { continue }
@@ -98,18 +125,21 @@ foreach ($c in $cumleler) {
 
 # 3) Yasakli kaliplar. Yalnizca KESIN olanlar listede: "ilgili" ve "saglamak"
 #    bilerek disarida, dogru kullanimlari da var ve yanlis uyari uretirlerdi.
-$yasak = @{
+#    [ordered]: sira onemli. Ozel kaliplar ("bulunmaktadir", "gerekmektedir")
+#    genel "-maktadir" / "-mektedir" kalibindan ONCE gelir, yoksa hic
+#    eslesmezler. Duz @{} hashtable sirasizdir. ste-tr-denetim.py ile ayni sira.
+$yasak = [ordered]@{
+    'bulunmaktadır'           = 'bulunmaktadir -> var'
+    'gerekmektedir'           = 'gerekmektedir -> gerekir / yapin'
     'gerçekleştir'            = 'gerceklestirmek -> yapmak'
     'icra et'                 = 'icra etmek -> yapmak'
-    'mektedir\b'              = '-mektedir -> -ir / -ar'
-    'maktadır\b'              = '-maktadir -> -ir / -ar'
-    'bulunmaktadır'           = 'bulunmaktadir -> var'
     'mevcuttur'               = 'mevcuttur -> var'
     'söz konusu'              = 'soz konusu -> bu, o (ya da adi)'
     'hususunda'               = 'hususunda -> hakkinda'
     'itibarıyla'              = 'itibariyla -> -den beri'
     'nezdinde'                = 'nezdinde -> -de'
-    'gerekmektedir'           = 'gerekmektedir -> gerekir / yapin'
+    'mektedir\b'              = '-mektedir -> -ir / -ar'
+    'maktadır\b'              = '-maktadir -> -ir / -ar'
 }
 # Bir cumlede ILK eslesmeden sonra durulur. "bulunmaktadir" zaten
 # "-maktadir" iceriyor; ikisini birden bildirmek ayni hatayi iki kez

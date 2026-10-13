@@ -213,6 +213,8 @@ Bulut oturumları Linux konteynerinde çalışır, PowerShell yoktur. `install-c
 - `global-CLAUDE.md` → `~/.claude/CLAUDE.md`
 - cevap dili `language: "turkish"` → `~/.claude/settings.json` (Windows'ta `install-global-claude-md.ps1` yapar)
 - skill-öneri hatırlatma hook'u → `~/.claude/settings.json` (idempotent)
+- repo eşitleme `SessionStart` hook'u → `cloud-repo-sync.sh` (aşağıya bak)
+- PowerShell (`pwsh`) → `.ps1` betiklerini bulutta test etmek için; kurulamazsa yalnızca uyarı verir
 - STE-TR yazım denetimi `Stop` hook'u → `ste-tr-denetim.py` (`ste-tr-denetim.ps1`'in Python karşılığı, aynı kurallar; idempotent, diğer `Stop` hook'larına dokunmaz)
 
 Tek bir kurulum hata verirse diğerlerine devam eder, sonda özet basar ve her zaman 0 ile çıkar (setup script oturumu düşürmesin diye). Tam kurulum ~3 dakika sürer.
@@ -230,6 +232,8 @@ for d in /home/user/skill-deposu /home/user/Skill-Deposu; do
 done
 true
 ```
+
+**Repo eşitleme (`cloud-repo-sync.sh`):** Bulut container'ı repoları yalnızca oturumun ilk açılışında klonlar. Günlerce süren bir oturumda yerel bilgisayardan yapılan push'lar kendiliğinden gelmez. Bu hook oturum açılışında ve devam ettirilişinde (`startup|resume`) `/home/user` altındaki her git reposunu `git fetch` ile kontrol eder ve **yalnızca fast-forward** ile çeker. Commit edilmemiş değişiklik varsa, dallar ayrışmışsa ya da push edilmemiş commit varsa hiçbir şeyi değiştirmez, durumu Claude'a bildirir. Elle çalıştırmak için `bash cloud-repo-sync.sh`. Kapatmak için `~/.claude/repo-sync-off` dosyasını oluştur.
 
 **Oturum-başı otomatik güncelleme:** `install-cloud-skills.sh` kurulum anındaki marketplace ve skills.sh kaynak repolarının son commit'lerini `~/.claude/cloud-skill-update-state.json`'a yazar ve `cloud-skill-update.sh`'i SessionStart hook'u olarak kaydeder. Her bulut oturumu başında hook bu repoları `git ls-remote` ile kontrol eder (birkaç saniye); yeni commit varsa plugin'leri ve/veya skills.sh skill'lerini **arka planda** günceller (log: `~/.claude/cloud-skill-update.log`). Güncel skill'ler bir sonraki mesajdan itibaren yüklenir. Bu, Windows'taki `check-skill-updates.ps1` / `check-agent-skills-updates.ps1` hook'larının karşılığıdır. Güncelleme container önbelleğine yazılmaz, yani önbellek eskidikçe her oturumda tekrarlanır. Kapatmak için `~/.claude/skill-autoupdate-off` dosyasını oluştur.
 

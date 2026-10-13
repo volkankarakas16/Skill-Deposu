@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # STE-TR yazim denetimi -- Stop hook (bulut/Linux).
 #
-# ste-tr-denetim.ps1'in Python karsiligi. Kurallar ve esikler AYNI; birini
-# degistiren otekini de degistirmeli. Bulut oturumlarinda PowerShell yok,
+# ste-tr-denetim.ps1'in Python karsiligi. Kurallar, esikler ve kalip sirasi
+# AYNI. Birini degistiren otekini de degistirmeli. Bulut oturumlarinda
 # install-cloud-skills.sh bu dosyayi Stop olayina baglar.
 #
 # Claude cevabini bitirdiginde calisir, SON asistan mesajini okur ve global
