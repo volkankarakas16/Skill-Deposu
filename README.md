@@ -224,14 +224,22 @@ bash install-cloud-skills.sh            # kur
 bash install-cloud-skills.sh --dry-run  # sadece listele
 ```
 
-**Her bulut oturumunda otomatik kurulum:** Skill-Deposu'nu oturuma ekle ve bulut ortamının **Setup script** alanına (oturum başlığındaki ortam menüsü → Edit) şunu yaz:
+**Her bulut oturumunda otomatik kurulum:** Bulut ortamının **Setup script** (Kurulum betiği) alanına (oturum başlığındaki ortam menüsü → Edit) `cloud-setup-script.sh` dosyasının içeriğini aynen yapıştır:
 
 ```bash
-for d in /home/user/skill-deposu /home/user/Skill-Deposu; do
-  [ -f "$d/install-cloud-skills.sh" ] && { bash "$d/install-cloud-skills.sh"; break; }
-done
+#!/bin/bash
+D=/opt/skill-deposu
+U=https://github.com/volkankarakas16/Skill-Deposu
+if [ -d "$D/.git" ]; then
+  git -C "$D" pull -q --ff-only
+else
+  git clone -q --depth 1 "$U" "$D"
+fi
+[ -f "$D/install-cloud-skills.sh" ] && bash "$D/install-cloud-skills.sh"
 true
 ```
+
+Betik Skill-Deposu'nu `/opt/skill-deposu`'ya kendisi klonlar. Oturuma hangi repo eklenirse eklensin (ya da hiç eklenmesin) skill'ler, CLAUDE.md ve hook'lar kurulur; Skill-Deposu'nu oturuma eklemek gerekmez. Bunun için repo GitHub'da **herkese açık (public)** olmalı: kurulum betiği oturuma eklenmemiş özel bir repoyu klonlayamaz. Ortam önbelleğe alındığında `/opt/skill-deposu` eski kalabilir; `cloud-repo-sync.sh` oturum açılışında onu çeker ve değiştiyse `install-cloud-skills.sh --fast` ile CLAUDE.md'yi ve hook'ları aynı oturumda tazeler.
 
 **Repo eşitleme (`cloud-repo-sync.sh`):** Bulut container'ı repoları yalnızca oturumun ilk açılışında klonlar. Günlerce süren bir oturumda yerel bilgisayardan yapılan push'lar kendiliğinden gelmez. Bu hook oturum açılışında ve devam ettirilişinde (`startup|resume`) `/home/user` altındaki her git reposunu `git fetch` ile kontrol eder ve **yalnızca fast-forward** ile çeker. Commit edilmemiş değişiklik varsa, dallar ayrışmışsa ya da push edilmemiş commit varsa hiçbir şeyi değiştirmez, durumu Claude'a bildirir. Elle çalıştırmak için `bash cloud-repo-sync.sh`. Kapatmak için `~/.claude/repo-sync-off` dosyasını oluştur.
 

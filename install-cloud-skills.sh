@@ -16,6 +16,11 @@
 # Elle de calistirilabilir:
 #   bash install-cloud-skills.sh            # kur
 #   bash install-cloud-skills.sh --dry-run  # sadece listele
+#   bash install-cloud-skills.sh --fast     # yalnizca CLAUDE.md + hook'lar (saniyeler)
+#
+# --fast modunu cloud-repo-sync.sh cagirir: Skill-Deposu oturum acilisinda
+# guncellendiyse, yeni kurallar ve hook'lar ayni oturumda devreye girer.
+# Plugin, skills.sh ve PowerShell kurulumu dakikalar surdugu icin atlanir.
 #
 # Tek bir plugin/skill hata verirse digerlerine devam eder; sonda ozet basar.
 
@@ -23,7 +28,9 @@ set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=0
+FAST=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+[ "${1:-}" = "--fast" ] && FAST=1
 
 failed=()
 
@@ -40,7 +47,9 @@ list_entries() {
     sed -e 's/\r$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$1" | grep -v -e '^#' -e '^$'
 }
 
-if ! command -v claude >/dev/null 2>&1; then
+if [ "$FAST" = 1 ]; then
+    echo "--fast: plugin'ler atlaniyor."
+elif ! command -v claude >/dev/null 2>&1; then
     echo "claude CLI bulunamadi; plugin kurulumu atlaniyor." >&2
 else
     echo "== Marketplace'ler =="
@@ -56,7 +65,9 @@ else
     done < <(list_entries "$DIR/claude-skills.txt")
 fi
 
-if ! command -v npx >/dev/null 2>&1; then
+if [ "$FAST" = 1 ]; then
+    echo "--fast: skills.sh skilleri atlaniyor."
+elif ! command -v npx >/dev/null 2>&1; then
     echo "npx bulunamadi; skills.sh skilleri atlaniyor." >&2
 elif [ -f "$DIR/agent-skills-lock.json" ]; then
     echo "== skills.sh skilleri =="
@@ -135,7 +146,7 @@ echo "== Oturum-basi guncelleme hook'u =="
 if [ "$DRY_RUN" = 1 ]; then
     echo "DRYRUN: guncelleme tabani yazilacak, SessionStart hook'u ~/.claude/settings.json'a eklenecek"
 else
-    bash "$DIR/cloud-skill-update.sh" --record || failed+=("update:record")
+    [ "$FAST" = 1 ] || bash "$DIR/cloud-skill-update.sh" --record || failed+=("update:record")
     python3 - "$HOME/.claude/settings.json" "$DIR/cloud-skill-update.sh" <<'PY' || failed+=("hook:skill-update")
 import json, os, sys
 path, script = sys.argv[1], sys.argv[2]
@@ -191,7 +202,9 @@ fi
 echo "== PowerShell =="
 # ste-tr-denetim.ps1 gibi Windows betikleri bulutta da test edilebilsin.
 # Kurulamazsa yalnizca uyari: bulutta denetimi ste-tr-denetim.py yapar.
-if command -v pwsh >/dev/null 2>&1; then
+if [ "$FAST" = 1 ]; then
+    echo "--fast: PowerShell atlaniyor."
+elif command -v pwsh >/dev/null 2>&1; then
     echo "Zaten kurulu: $(pwsh -NoProfile -c '$PSVersionTable.PSVersion.ToString()')"
 elif [ "$DRY_RUN" = 1 ]; then
     echo "DRYRUN: powershell paketi packages.microsoft.com'dan kurulacak"

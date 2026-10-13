@@ -11,6 +11,9 @@
 # dallar ayrismissa HICBIR SEY degistirmez, yalnizca durumu bildirir.
 # Sonuc Claude'a additionalContext olarak gider; degisiklik yoksa sessizdir.
 #
+# Skill-Deposu cekildiyse install-cloud-skills.sh --fast calisir. Yeni
+# CLAUDE.md kurallari ve hook'lar ayni oturumda devreye girer.
+#
 # Elle calistirma: bash cloud-repo-sync.sh
 # Kapatma: ~/.claude/repo-sync-off dosyasini olusturun.
 
@@ -18,6 +21,8 @@ set -uo pipefail
 
 [ -f "$HOME/.claude/repo-sync-off" ] && exit 0
 ROOT="${REPO_SYNC_ROOT:-/home/user}"
+# Kurulum betiginin her oturumda klonladigi kopya (README > Setup script).
+SKILL_HOME="${SKILL_DEPOSU_HOME:-/opt/skill-deposu}"
 
 # Tek repo: "durum<TAB>repo<TAB>aciklama" satiri yazar.
 sync_one() {
@@ -46,7 +51,7 @@ sync_one() {
 
 # Repolar paralel esitlenir. Cikti sirasi karisabilir, sonda siralanir.
 results=$(
-    for g in "$ROOT"/*/.git; do
+    for g in "$ROOT"/*/.git "$SKILL_HOME/.git"; do
         [ -d "$g" ] || continue
         sync_one "$(dirname "$g")" &
     done
@@ -54,6 +59,22 @@ results=$(
 )
 results=$(sort -t$'\t' -k2 <<<"$results" | sed '/^$/d')
 [ -z "$results" ] && exit 0
+
+# Skill-Deposu cekildiyse hizli kurulum. Hook'larin isaret ettigi kopya
+# once /opt klonu, yoksa oturuma eklenen repo. Sirayla, tek kez calisir:
+# iki kurulum ayni anda settings.json'a yazmasin.
+if grep -qiP '^cekildi\tskill-deposu\t' <<<"$results"; then
+    for d in "$SKILL_HOME" "$ROOT"/[Ss]kill-[Dd]eposu; do
+        if [ -f "$d/install-cloud-skills.sh" ]; then
+            if bash "$d/install-cloud-skills.sh" --fast >/dev/null 2>&1; then
+                results+=$'\nkuruldu\tskill-deposu\tCLAUDE.md ve hook\'lar tazelendi (--fast)'
+            else
+                results+=$'\nhata\tskill-deposu\t--fast kurulum basarisiz'
+            fi
+            break
+        fi
+    done
+fi
 
 # Ozet Claude'a gider. Kullaniciya ilk cevapta iletilmesi istenir.
 python3 -c '
