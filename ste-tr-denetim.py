@@ -5,13 +5,15 @@
 # AYNI. Birini degistiren otekini de degistirmeli. Bulut oturumlarinda
 # install-cloud-skills.sh bu dosyayi Stop olayina baglar.
 #
-# Claude cevabini bitirdiginde calisir, SON asistan mesajini okur ve global
-# CLAUDE.md'deki STE-TR kurallarina aykiri yerleri bulur. Ihlal varsa cevabi
-# ENGELLER; Claude duzeltip yeniden yazar.
+# UYARI MODU, iki asamali:
+#   Stop             -> son asistan mesajini denetler. Ihlal varsa cevabi
+#                       ENGELLEMEZ, oturuma ozel bir not dosyasina yazar.
+#   UserPromptSubmit -> (--istem) not varsa sonraki cevaba talimat olarak
+#                       ekler ve notu siler.
 #
-# Dongu korumasi: stop_hook_active bayragi geldiginde hic denetim yapmaz.
-# Claude bir kez engellendiyse ikinci kez engellenmez, yoksa cevap hic
-# bitmez.
+# Neden engellemiyor: engellenen cevap ekranda zaten gorunuyordu. Claude
+# duzeltmeyi ikinci bir mesaj olarak yaziyordu. Kullanici ayni cevabi iki
+# kez goruyor, cikti token'i ikiye katlaniyordu (2026-10-19).
 #
 # Olcum kod DISINDA yapilir. Kod blogu, satir ici kod, tablo ve baglanti
 # adresi elenir: oralardaki noktali virgul ve uzun satir yazim hatasi degil.
@@ -26,6 +28,7 @@ import sys
 from collections import deque
 
 MAX_BULGU = 6
+NOT_DIZINI = os.path.expanduser("~/.claude/ste-tr-notlar")
 MAX_KELIME = 20
 
 # Yalnizca KESIN olanlar listede: "ilgili" ve "saglamak" bilerek disarida,
@@ -146,6 +149,46 @@ def denetle(metin):
     return bulgular
 
 
+def not_yolu(girdi):
+    # Oturum kimligi dosya adinda kullanilir. Yol karakterleri ayiklanir.
+    sid = re.sub(r"[^A-Za-z0-9_-]", "", str(girdi.get("session_id") or ""))
+    return os.path.join(NOT_DIZINI, (sid or "oturum") + ".txt")
+
+
+def denetim(girdi):
+    # Eski surumden kalan yeniden yazma turunda tekrar denetleme.
+    if girdi.get("stop_hook_active") is True:
+        return
+    yol = girdi.get("transcript_path")
+    if not yol or not os.path.isfile(yol):
+        return
+    metin = son_asistan_metni(yol)
+    bulgular = denetle(metin) if metin else []
+    hedef = not_yolu(girdi)
+    if not bulgular:
+        return
+    not_metni = ("Onceki cevabinda STE-TR yazim kurali ihlalleri vardi. Onceki "
+                 "cevabi YENIDEN YAZMA. Bu cevapta ayni hatalari yapma.\n"
+                 + "\n".join(bulgular) + "\n"
+                 "Kural: her cumlede tek bilgi, aciklama en cok 20 kelime, "
+                 "noktali virgul yok, etken cati, koşul once gelir.")
+    os.makedirs(NOT_DIZINI, exist_ok=True)
+    with open(hedef, "w", encoding="utf-8") as f:
+        f.write(not_metni)
+
+
+def istem(girdi):
+    hedef = not_yolu(girdi)
+    if not os.path.isfile(hedef):
+        return
+    with open(hedef, encoding="utf-8") as f:
+        not_metni = f.read()
+    os.remove(hedef)
+    # ensure_ascii: stdout kodlamasi UTF-8 olmasa da cikti bozulmaz.
+    sys.stdout.write(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "UserPromptSubmit", "additionalContext": not_metni}}))
+
+
 def main():
     ham = sys.stdin.read()
     if not ham.strip():
@@ -154,36 +197,16 @@ def main():
         girdi = json.loads(ham)
     except ValueError:
         return
-
-    # Dongu korumasi. Bu olmadan Claude sonsuza kadar yeniden yazar.
-    if girdi.get("stop_hook_active") is True:
-        return
-
-    yol = girdi.get("transcript_path")
-    if not yol or not os.path.isfile(yol):
-        return
-
-    metin = son_asistan_metni(yol)
-    if not metin:
-        return
-
-    bulgular = denetle(metin)
-    if not bulgular:
-        return
-
-    sebep = ("STE-TR yazim kurali ihlali bulundu. Cevabi DUZELTIP yeniden yaz.\n"
-             "Global CLAUDE.md > Yazim kurali (STE-TR) bolumune bak.\n\n"
-             + "\n".join(bulgular) + "\n\n"
-             "Kural: her cumlede tek bilgi, aciklama en cok 20 kelime,\n"
-             "noktali virgul yok, etken cati, koşul once gelir.")
-    # ensure_ascii: stdout kodlamasi UTF-8 olmasa da cikti bozulmaz.
-    sys.stdout.write(json.dumps({"decision": "block", "reason": sebep}))
+    if "--istem" in sys.argv[1:]:
+        istem(girdi)
+    else:
+        denetim(girdi)
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception:
-        # Bozuk denetim cevabi engellemesin.
+        # Bozuk denetim oturumu bozmasin.
         pass
     sys.exit(0)

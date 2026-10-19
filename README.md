@@ -73,10 +73,12 @@ Ondan sonrası kendiliğinden yürür.
 
 ## STE-TR yazım denetimi hook'u (cevap bitince denetler)
 
-`ste-tr-denetim.ps1`, Claude her cevabı bitirdiğinde çalışan bir `Stop` hook
-script'idir. Son asistan mesajını okur ve `global-CLAUDE.md`'deki STE-TR yazım
-kurallarına aykırı yerleri arar. İhlal bulursa cevabı **engeller**; Claude
-düzeltip yeniden yazar.
+`ste-tr-denetim.ps1` iki olayda çalışan bir hook script'idir (**uyarı modu**):
+
+- `Stop`: Claude cevabı bitirince son asistan mesajını okur ve `global-CLAUDE.md`'deki STE-TR yazım kurallarına aykırı yerleri arar. İhlal bulursa cevabı **engellemez**; bulguları oturuma özel bir not dosyasına (`~/.claude/ste-tr-notlar/<oturum>.txt`) yazar.
+- `UserPromptSubmit` (`-Istem`): Bir sonraki istekte not varsa Claude'a talimat olarak ekler ("önceki cevabı yeniden yazma, bu cevapta aynı hataları yapma") ve notu siler.
+
+Neden engellemiyor: 2026-10-19'a kadar hook cevabı engelliyordu. Engellenen cevap ekranda zaten görünüyordu ve Claude düzeltmeyi ikinci bir mesaj olarak yazıyordu. Kullanıcı aynı cevabı iki kez görüyor, çıktı token'ı ikiye katlanıyordu.
 
 Neden gerekli: `skill-suggestion-reminder.ps1` kuralı her istekte hatırlatıyor,
 ama o hook istekten **önce** çalıştığı için cevabı göremiyor. 2026-10-11'de
@@ -93,10 +95,7 @@ Denetlenen üç şey:
 
 Ölçüm kod **dışında** yapılır: kod blokları, satır içi kod, tablo satırları ve
 bağlantı adresleri elenir. Oralardaki noktalı virgül yazım hatası değildir.
-`stop_hook_active` bayrağı geldiğinde hiç denetim yapmaz, yani aynı cevap ikinci
-kez engellenmez ve sonsuz döngü oluşmaz.
-
-Yanlış uyarı oranı ölçüldü: son 12 cevaptan 1 tanesi engellenirdi.
+Yanlış uyarı oranı ölçüldü (engelleme modunda): son 12 cevaptan 1 tanesi engellenirdi.
 
 Yeni bir bilgisayarda kurmak için:
 
@@ -117,7 +116,7 @@ PowerShell 5.1 BOM'suz dosyadaki Türkçe karakterleri bozuyor ve regex'ler
 eşleşmiyor. Script'i düzenledikten sonra BOM'un kaybolmadığını doğrula.
 
 **Bulut (Linux):** PowerShell olmadığı için bulut oturumlarında aynı denetimi
-`ste-tr-denetim.py` yapar; `install-cloud-skills.sh` onu `Stop` hook'u olarak
+`ste-tr-denetim.py` yapar; `install-cloud-skills.sh` onu `Stop` ve `UserPromptSubmit` hook'u olarak
 kaydeder. Kurallardan birini değiştirirsen iki dosyayı birlikte güncelle.
 
 ## Skill güncelleme kontrolü + otomatik güncelleme (oturum başı)
@@ -215,7 +214,7 @@ Bulut oturumları Linux konteynerinde çalışır, PowerShell yoktur. `install-c
 - skill-öneri hatırlatma hook'u → `~/.claude/settings.json` (idempotent)
 - repo eşitleme `SessionStart` hook'u → `cloud-repo-sync.sh` (aşağıya bak)
 - PowerShell (`pwsh`) → `.ps1` betiklerini bulutta test etmek için; kurulamazsa yalnızca uyarı verir
-- STE-TR yazım denetimi `Stop` hook'u → `ste-tr-denetim.py` (`ste-tr-denetim.ps1`'in Python karşılığı, aynı kurallar; idempotent, diğer `Stop` hook'larına dokunmaz)
+- STE-TR yazım denetimi `Stop` + `UserPromptSubmit` hook'ları (uyarı modu) → `ste-tr-denetim.py` (`ste-tr-denetim.ps1`'in Python karşılığı, aynı kurallar; idempotent, diğer hook'lara dokunmaz)
 
 Tek bir kurulum hata verirse diğerlerine devam eder, sonda özet basar ve her zaman 0 ile çıkar (setup script oturumu düşürmesin diye). Tam kurulum ~3 dakika sürer.
 

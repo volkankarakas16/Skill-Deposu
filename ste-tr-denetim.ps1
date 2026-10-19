@@ -1,20 +1,25 @@
 ﻿# STE-TR yazim denetimi -- Stop hook.
 #
-# Claude cevabini bitirdiginde calisir, SON asistan mesajini okur ve global
-# CLAUDE.md'deki STE-TR kurallarina aykiri yerleri bulur. Ihlal varsa cevabi
-# ENGELLER; Claude duzeltip yeniden yazar.
+# UYARI MODU, iki asamali (ste-tr-denetim.py ile ayni):
+#   Stop             -> SON asistan mesajini denetler. Ihlal varsa cevabi
+#                       ENGELLEMEZ, oturuma ozel bir not dosyasina yazar.
+#   UserPromptSubmit -> (-Istem) not varsa sonraki cevaba talimat olarak
+#                       ekler ve notu siler.
+#
+# Neden engellemiyor: engellenen cevap ekranda zaten gorunuyordu. Claude
+# duzeltmeyi ikinci bir mesaj olarak yaziyordu. Kullanici ayni cevabi iki
+# kez goruyor, cikti token'i ikiye katlaniyordu (2026-10-19).
 #
 # Neden gerekli: skill-suggestion-reminder.ps1 kurali her istekte
 # HATIRLATIYOR ama hatirlatma yetmiyor. 2026-10-11'de kullanici, kuralin
 # hatirlatmaya ragmen uygulanmadigini bildirdi. Hatirlatma istekten ONCE
 # calisiyor ve cevabi goremiyor. Bu betik cevabi GORUYOR.
 #
-# Dongu korumasi: stop_hook_active bayragi geldiginde hic denetim yapmaz.
-# Claude bir kez engellendiyse ikinci kez engellenmez, yoksa cevap hic
-# bitmez.
 #
 # Olcum kod DISINDA yapilir. Kod blogu, satir ici kod, tablo ve baglanti
 # adresi elenir: oralardaki noktali virgul ve uzun satir yazim hatasi degil.
+
+param([switch]$Istem)
 
 $ErrorActionPreference = "Stop"
 
@@ -29,7 +34,25 @@ if (-not $ham) { exit 0 }
 
 try { $girdi = $ham | ConvertFrom-Json } catch { exit 0 }
 
-# Dongu korumasi. Bu olmadan Claude sonsuza kadar yeniden yazar.
+# Oturuma ozel not dosyasi. Oturum kimligindeki yol karakterleri ayiklanir.
+$notDizini = Join-Path $env:USERPROFILE ".claude\ste-tr-notlar"
+$sid = ([string]$girdi.session_id) -replace '[^A-Za-z0-9_-]', ''
+if (-not $sid) { $sid = "oturum" }
+$notYolu = Join-Path $notDizini "$sid.txt"
+$NoBomUtf8 = New-Object System.Text.UTF8Encoding $false
+
+# --- UserPromptSubmit: notu sonraki cevaba ekle --------------------------
+if ($Istem) {
+    if (-not (Test-Path $notYolu)) { exit 0 }
+    $not = [System.IO.File]::ReadAllText($notYolu, $NoBomUtf8)
+    Remove-Item $notYolu -Force
+    @{ hookSpecificOutput = @{ hookEventName = "UserPromptSubmit"
+                               additionalContext = $not } } |
+        ConvertTo-Json -Compress -Depth 5
+    exit 0
+}
+
+# Eski surumden kalan yeniden yazma turunda tekrar denetleme.
 if ($girdi.stop_hook_active -eq $true) { exit 0 }
 
 $yol = $girdi.transcript_path
@@ -151,18 +174,16 @@ foreach ($c in $cumleler) {
 }
 
 # --- sonuc ----------------------------------------------------------------
+# Cevap ENGELLENMEZ. Ihlaller not edilir, sonraki istekte -Istem ile eklenir.
 if ($bulgular.Count -eq 0) { exit 0 }
 
 $ln = [Environment]::NewLine
-$sebep = "STE-TR yazim kurali ihlali bulundu. Cevabi DUZELTIP yeniden yaz." +
-         $ln + "Global CLAUDE.md > Yazim kurali (STE-TR) bolumune bak." + $ln +
-         $ln + ($bulgular -join $ln) + $ln +
-         $ln + "Kural: her cumlede tek bilgi, aciklama en cok 20 kelime," +
-         $ln + "noktali virgul yok, etken cati, koşul once gelir."
+$not = "Onceki cevabinda STE-TR yazim kurali ihlalleri vardi. Onceki " +
+       "cevabi YENIDEN YAZMA. Bu cevapta ayni hatalari yapma." + $ln +
+       ($bulgular -join $ln) + $ln +
+       "Kural: her cumlede tek bilgi, aciklama en cok 20 kelime, " +
+       "noktali virgul yok, etken cati, koşul once gelir."
 
-$cikti = @{
-    decision = "block"
-    reason   = $sebep
-}
-$cikti | ConvertTo-Json -Compress -Depth 5
+New-Item -ItemType Directory -Force -Path $notDizini | Out-Null
+[System.IO.File]::WriteAllText($notYolu, $not, $NoBomUtf8)
 exit 0

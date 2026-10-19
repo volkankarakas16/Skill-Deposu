@@ -1,12 +1,13 @@
-# ste-tr-denetim.ps1'i Stop olayina baglar. Claude her cevabi bitirdiginde
-# son mesaj STE-TR kurallarina gore denetlenir, ihlal varsa cevap engellenir
-# ve Claude yeniden yazar.
+# ste-tr-denetim.ps1'i Stop ve UserPromptSubmit olaylarina baglar (uyari
+# modu). Claude cevabi bitirince son mesaj STE-TR kurallarina gore denetlenir.
+# Ihlal varsa cevap ENGELLENMEZ: ihlaller not edilir ve sonraki istekte
+# Claude'a talimat olarak eklenir. Boylece cevap hep tek gelir.
 #
 # Hook GLOBAL kurulur: ~/.claude/settings.json. Hangi klasorde Claude Code
 # acilirsa acilsin calisir, tek bir projeye bagli degildir.
 #
-# Mevcut Stop hook'larini BOZMAZ. Ayni olay altina ikinci bir girdi olarak
-# eklenir ve iki kez kurulmaz.
+# Mevcut hook'lari BOZMAZ. Yalnizca kendi girdisini tazeler ve iki kez
+# kurulmaz. Eski engelleyen surumun girdisi de tazelenir.
 #
 # Kullanim: git pull sonrasi (ozellikle yeni bir bilgisayarda)
 #   powershell -ExecutionPolicy Bypass -File install-ste-tr-hook.ps1
@@ -17,6 +18,30 @@ $NoBomUtf8 = New-Object System.Text.UTF8Encoding $false
 
 function Write-JsonNoBom($obj) {
     [System.IO.File]::WriteAllText($SettingsPath, ($obj | ConvertTo-Json -Depth 20), $NoBomUtf8)
+}
+
+function Ensure-Entry($json, $event, $command, $isMine) {
+    # Olay yoksa olustur. Diger hook'lara dokunmadan yalnizca bu betigin
+    # girdisini tazeler. Degisiklik olduysa $true doner.
+    if (-not ($json.hooks.PSObject.Properties.Name -contains $event)) {
+        $json.hooks | Add-Member -MemberType NoteProperty -Name $event -Value @()
+    }
+    $mevcut = @()
+    foreach ($entry in $json.hooks.$event) {
+        foreach ($h in $entry.hooks) { if (& $isMine $h.command) { $mevcut += $h.command } }
+    }
+    if ($mevcut.Count -eq 1 -and $mevcut[0] -eq $command) { return $false }
+
+    $kalan = @()
+    foreach ($entry in $json.hooks.$event) {
+        $entry.hooks = @($entry.hooks | Where-Object { -not (& $isMine $_.command) })
+        if ($entry.hooks.Count -gt 0) { $kalan += $entry }
+    }
+    $kalan += [PSCustomObject]@{
+        hooks = @([PSCustomObject]@{ type = "command"; command = $command; timeout = 20 })
+    }
+    $json.hooks.$event = $kalan
+    return $true
 }
 
 function Ensure-SteTrHook {
@@ -30,40 +55,25 @@ function Ensure-SteTrHook {
         Write-Warning "$scriptPath bulunamadi, STE-TR hook'u atlaniyor."
         return
     }
-    $command = "powershell -ExecutionPolicy Bypass -File `"$scriptPath`""
+    $base = "powershell -ExecutionPolicy Bypass -File `"$scriptPath`""
 
     $json = Get-Content $SettingsPath -Raw | ConvertFrom-Json
-
     if (-not $json.hooks) {
         $json | Add-Member -MemberType NoteProperty -Name hooks -Value ([PSCustomObject]@{})
     }
-    if (-not ($json.hooks.PSObject.Properties.Name -contains "Stop")) {
-        $json.hooks | Add-Member -MemberType NoteProperty -Name Stop -Value @()
-    }
 
-    foreach ($entry in $json.hooks.Stop) {
-        foreach ($h in $entry.hooks) {
-            if ($h.command -like "*ste-tr-denetim.ps1*") {
-                Write-Host "STE-TR hook'u zaten kurulu, atlaniyor."
-                return
-            }
-        }
-    }
+    # Uyari modu: Stop ihlali not eder, UserPromptSubmit notu sonraki
+    # cevaba ekler. Eski engelleyen surumun girdisi ayni komutla tazelenir.
+    $isMine = { param($c) $c -like "*ste-tr-denetim.ps1*" }
+    $d1 = Ensure-Entry $json "Stop" $base $isMine
+    $d2 = Ensure-Entry $json "UserPromptSubmit" "$base -Istem" $isMine
 
-    $newEntry = [PSCustomObject]@{
-        hooks = @(
-            [PSCustomObject]@{
-                type    = "command"
-                command = $command
-                timeout = 20
-            }
-        )
+    if ($d1 -or $d2) {
+        Write-JsonNoBom $json
+        Write-Host "settings.json guncellendi: STE-TR hook'lari (Stop + UserPromptSubmit) kuruldu."
+    } else {
+        Write-Host "STE-TR hook'lari zaten kurulu, atlaniyor."
     }
-
-    $json.hooks.Stop = @($json.hooks.Stop) + $newEntry
-    Write-JsonNoBom $json
-    Write-Host "settings.json guncellendi: STE-TR Stop hook'u eklendi."
-    Write-Host "Komut: $command"
 }
 
 Ensure-SteTrHook

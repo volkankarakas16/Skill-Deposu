@@ -9,7 +9,7 @@
 #   - oturum-basi guncelleme hook'u                -> cloud-skill-update.sh (SessionStart)
 #   - repo esitleme hook'u                         -> cloud-repo-sync.sh (SessionStart)
 #   - PowerShell (pwsh)                            -> .ps1 betiklerini bulutta test icin
-#   - STE-TR yazim denetimi hook'u                 -> ste-tr-denetim.py (Stop)
+#   - STE-TR yazim denetimi hook'u                 -> ste-tr-denetim.py (Stop + UserPromptSubmit, uyari modu)
 #
 # Bulut ortaminin "setup script" alanindan cagrilmak uzere yazildi (oturum
 # baslamadan once calisir, boylece skiller ilk mesajdan itibaren yuklu olur).
@@ -226,30 +226,39 @@ fi
 
 echo "== STE-TR denetim hook'u =="
 if [ "$DRY_RUN" = 1 ]; then
-    echo "DRYRUN: Stop hook'u (ste-tr-denetim.py) ~/.claude/settings.json'a eklenecek"
+    echo "DRYRUN: Stop + UserPromptSubmit hook'u (ste-tr-denetim.py) ~/.claude/settings.json'a eklenecek"
 else
     python3 - "$HOME/.claude/settings.json" "$DIR/ste-tr-denetim.py" <<'PY' || failed+=("hook:ste-tr")
 import json, os, sys
 path, script = sys.argv[1], sys.argv[2]
 settings = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+# Uyari modu: Stop ihlali not eder, UserPromptSubmit notu sonraki cevaba ekler.
 # Repo bu oturuma eklenmediyse hook sessizce gecsin.
-command = f'f="{script}"; [ -f "$f" ] && python3 "$f" || true'
-hook = {"type": "command", "command": command, "timeout": 20}
-groups = settings.setdefault("hooks", {}).setdefault("Stop", [])
-# Diger Stop hook'larina dokunma, yalnizca bu betigin girdisini tazele.
-# Ayni gruptaki baska hook'lar korunur, bosalan grup silinir.
+want = {
+    "Stop": f'f="{script}"; [ -f "$f" ] && python3 "$f" || true',
+    "UserPromptSubmit": f'f="{script}"; [ -f "$f" ] && python3 "$f" --istem || true',
+}
 mine = lambda h: "ste-tr-denetim" in h.get("command", "")
-existing = [h for g in groups for h in g.get("hooks", []) if mine(h)]
-if existing == [hook]:
-    print("Zaten kurulu.")
-else:
+hooks = settings.setdefault("hooks", {})
+changed = False
+for event, command in want.items():
+    hook = {"type": "command", "command": command, "timeout": 20}
+    groups = hooks.setdefault(event, [])
+    existing = [h for g in groups for h in g.get("hooks", []) if mine(h)]
+    if existing == [hook]:
+        continue
+    # Diger hook'lara dokunma, yalnizca bu betigin girdisini tazele.
     for g in groups:
         g["hooks"] = [h for h in g.get("hooks", []) if not mine(h)]
     groups[:] = [g for g in groups if g["hooks"]]
     groups.append({"hooks": [hook]})
-    print("Guncellendi." if existing else "Eklendi.")
+    changed = True
+if changed:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)
+    print("Guncellendi.")
+else:
+    print("Zaten kurulu.")
 PY
 fi
 
